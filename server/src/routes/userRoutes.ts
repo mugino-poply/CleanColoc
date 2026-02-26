@@ -81,6 +81,101 @@ router.get('/api/users', userController.getAllUsers);
 
 /**
  * @openapi
+ * /api/data:
+ *   get:
+ *     summary: Récupère les statistiques globales et les 3 derniers utilisateurs créés
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: Statistiques et liste des derniers utilisateurs récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 statistiques:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 42
+ *                       description: Nombre total d'utilisateurs
+ *                     moyenneLongueurNom:
+ *                       type: integer
+ *                       example: 6
+ *                       description: Longueur moyenne des noms des trois derniers utilisateurs
+ *                     derniers3:
+ *                       type: integer
+ *                       example: 3
+ *                       description: Nombre d'utilisateurs considérés pour les statistiques
+ *                 derniersAjouts:
+ *                   type: array
+ *                   description: Liste des trois derniers utilisateurs ajoutés
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 5
+ *                       nom:
+ *                         type: string
+ *                         example: "Dupont"
+ *                       prenom:
+ *                         type: string
+ *                         example: "Jean"
+ *                       creeLe:
+ *                         type: string
+ *                         format: date
+ *                         example: "2026-02-25"
+ *       500:
+ *         description: Erreur lors du calcul des statistiques
+ */
+router.get('api/data', userController.getData);
+
+/**
+ * @openapi
+ * /api/users/{id}:
+ *   get:
+ *     summary: Récupère les informations d’un utilisateur par son identifiant
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Identifiant de l’utilisateur à récupérer
+ *     responses:
+ *       200:
+ *         description: Données de l’utilisateur récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 nom:
+ *                   type: string
+ *                 prenom:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('api/users/:id', userController.getUser);
+
+/**
+ * @openapi
  * /api/users:
  *   post:
  *     summary: Crée un nouvel utilisateur

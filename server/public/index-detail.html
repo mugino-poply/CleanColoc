@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Détail Étudiant - TP Dev III</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <div class="buttons mb-6 has-text-centered">
+        <a href="/" class="button is-link">
+          <i class="fas fa-arrow-left mr-2"></i>Retour liste
+        </a>
+      </div>
+
+      <div class="box has-background-white has-shadow">
+        <div class="content">
+          <h1 class="title has-text-link mb-6" id="nomComplet">Chargement...</h1>          
+          <div class="columns">
+            <div class="column is-two-thirds">
+              
+              <div class="field">
+                <label class="label has-text-black">ID</label>
+                <div class="control">
+                  <input class="input is-static has-text-link has-text-weight-semibold" 
+                         id="userId" readonly>
+                </div>
+              </div>
+              
+              <div class="field">
+                <label class="label has-text-black">Créé le</label>
+                <div class="control">
+                  <input class="input is-static has-text-link has-text-weight-semibold" 
+                         id="createdAt" readonly>
+                </div>
+              </div>
+              
+              <div class="field">
+                <label class="label has-text-black">Mis à jour le</label>
+                <div class="control">
+                  <input class="input is-static has-text-link has-text-weight-semibold" 
+                         id="updatedAt" readonly>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('id');
+    
+    if (userId) {
+        fetch(`/api/users/${userId}`)
+            .then(res => {
+                console.log('Status:', res.status);  
+                if (!res.ok) throw new Error('User non trouvé');
+                return res.json();  
+            })
+            .then(user => {  // 
+                console.log('User:', user);
+                document.getElementById('nomComplet').textContent = `${user.nom} ${user.prenom}`;
+                document.getElementById('userId').value = user.id;
+                document.getElementById('createdAt').value = new Date(user.createdAt).toLocaleString('fr-FR');
+                document.getElementById('updatedAt').value = new Date(user.updatedAt).toLocaleString('fr-FR');
+            })
+        .catch(err => {
+          console.error('Erreur:', err);
+          document.getElementById('nomComplet').textContent = 'Utilisateur non trouvé';
+        });
+    }
+  </script>
+</body>
+</html>

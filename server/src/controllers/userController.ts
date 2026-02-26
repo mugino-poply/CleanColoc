@@ -27,6 +27,48 @@ export const getAllUsers = async (req: Request, res: Response) => {
     }
 };
 
+export const getData = async (req: Request, res: Response) => {
+    try {
+            const totalUsers = await User.count();
+            const derniersUsers = await User.findAll({
+                limit: 3,
+                order: [['createdAt', 'DESC']]
+            });
+            
+            const longueurTotale = derniersUsers.reduce((sum, user) => sum + user.nom.length, 0);
+            const moyenneNom = derniersUsers.length > 0 ? Math.round(longueurTotale / derniersUsers.length) : 0;
+            
+            res.json({
+                statistiques: {
+                    total: totalUsers,
+                    moyenneLongueurNom: moyenneNom,
+                    derniers3: derniersUsers.length
+                },
+                derniersAjouts: derniersUsers.map(u => ({
+                    id: u.id,
+                    nom: u.nom,
+                    prenom: u.prenom,
+                    creeLe: u.createdAt.toISOString().split('T')[0]
+                }))
+            });
+        } catch (error) {
+            res.status(500).json({ error: 'Erreur calcul stats' });
+        }
+    };
+
+export const getUser = async (req: Request, res: Response) => {
+    try {
+        const user = await User.findByPk(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        }
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+};
+
+
 export const createUser = async (req: Request, res: Response) => {
     try {
         const user = await User.create(req.body);

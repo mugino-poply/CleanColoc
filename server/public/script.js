@@ -23,8 +23,12 @@ async function chargerUsers() {
             li.className = 'list-item mb-3 p-4 has-background-light has-border-radius has-text-weight-medium is-flex is-justify-content-space-between is-align-items-center';
             li.dataset.id = user.id;
             const spanNom = document.createElement('span');
+            spanNom.style.cursor = 'pointer';
+            spanNom.style.color = '#209cee';
             spanNom.innerHTML = `<strong>${user.nom} ${user.prenom}</strong>`;
-            
+            spanNom.addEventListener('click', () => {
+                window.location.href = `/index-detail.html?id=${user.id}`;
+            });
             const btnSupprimer = document.createElement('button');
             btnSupprimer.className = 'button is-danger is-light is-small';
             btnSupprimer.innerHTML = 'X';
