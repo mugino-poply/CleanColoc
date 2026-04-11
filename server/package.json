@@ -1,5 +1,5 @@
 {
-  "name": "mon-super-projet",
+  "name": "cleancoloc-server",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

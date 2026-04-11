@@ -4,8 +4,9 @@ const swaggerOptions = {
     definition: {
         openapi: "3.0.0",
         info: {
-            title: "Mon API Géniale",
+            title: "CleanColoc API",
             version: "1.0.0",
+            description: "API de gestion de colocation — tâches, dépenses et membres",
         },
     },
     // Chemin vers les fichiers contenant les annotations

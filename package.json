@@ -1,5 +1,5 @@
 {
-  "name": "mon-super-projet",
+  "name": "cleancoloc",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -13,16 +13,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JN-EPHEC/individual-mugino-poply.git"
+    "url": "git+https://github.com/mugino-poply/CleanColoc.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/JN-EPHEC/individual-mugino-poply/issues"
+    "url": "https://github.com/mugino-poply/CleanColoc/issues"
   },
-  "homepage": "https://github.com/JN-EPHEC/individual-mugino-poply#readme",
+  "homepage": "https://github.com/mugino-poply/CleanColoc#readme",
   "devDependencies": {
     "concurrently": "^9.2.1"
   },

@@ -1,3 +1,28 @@
+# Dépendances
 node_modules/
+
+# Environnement
 .env
+.env.local
+.env.development
+.env.production
+
+# Build
+dist/
 .next/
+client/dist/
+
+# Tests
+coverage/
+
+# DB locale
+*.sqlite
+
+# Sequelize credentials
+server/config/config.json
+
+# OS
+.DS_Store
+
+.next/
+client/out/
