@@ -3,7 +3,7 @@ name: Continuous Deployment - Frontend
 on:
   push:
     branches:
-      - main # Ne se declenche que sur la branche principale
+      - main
 
 jobs:
   deploy-frontend:
@@ -19,12 +19,14 @@ jobs:
           npm install
           npm run build
         working-directory: ./client
+        env:
+          NEXT_PUBLIC_API_URL: http://${{ secrets.SERVER_IP }}:3000/api
       - name: Deploy to VPS via SCP
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "client/dist/*"
+          source: "client/out/*"
           target: "/var/www/html/"
           strip_components: 2
