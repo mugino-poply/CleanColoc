@@ -1,0 +1,30 @@
+name: Continuous Deployment - Frontend
+
+on:
+  push:
+    branches:
+      - main # Ne se declenche que sur la branche principale
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Install dependencies and Build
+        run: |
+          npm install
+          npm run build
+        working-directory: ./client
+      - name: Deploy to VPS via SCP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "client/dist/*"
+          target: "/var/www/html/"
+          strip_components: 2
