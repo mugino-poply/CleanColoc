@@ -7,6 +7,7 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
+    "module": "esnext",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "target": "esnext",
@@ -41,5 +42,6 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  }
+  },
+  "exclude": ["**/*.test.ts"],
 }

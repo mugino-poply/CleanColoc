@@ -1,4 +1,6 @@
-import express, {Application, Request, Response} from 'express';
+import "dotenv/config";
+import express from 'express';
+import type {Application, Request, Response} from 'express';
 import userRoutes from './routes/userRoutes';
 import sequelize from './config/database';
 import { initDatabase } from './config/database';

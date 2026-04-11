@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1773340032845" clover="3.2.0">
+  <project timestamp="1773340032845" name="All files">
+    <metrics statements="44" coveredstatements="44" conditionals="55" coveredconditionals="55" methods="3" coveredmethods="3" elements="102" coveredelements="102" complexity="0" loc="44" ncloc="44" packages="1" files="3" classes="3"/>
+    <file name="password.ts" path="/home/hippolyte/Bureau/BAC2/Dev 3/dev3-backend-tp1/server/src/utils/password.ts">
+      <metrics statements="16" coveredstatements="16" conditionals="25" coveredconditionals="25" methods="1" coveredmethods="1"/>
+      <line num="1" count="1" type="stmt"/>
+      <line num="2" count="13" type="cond" truecount="2" falsecount="0"/>
+      <line num="3" count="12" type="cond" truecount="2" falsecount="0"/>
+      <line num="4" count="11" type="cond" truecount="2" falsecount="0"/>
+      <line num="6" count="10" type="stmt"/>
+      <line num="7" count="10" type="stmt"/>
+      <line num="8" count="10" type="stmt"/>
+      <line num="9" count="10" type="stmt"/>
+      <line num="11" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="13" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="14" count="1" type="stmt"/>
+      <line num="15" count="8" type="cond" truecount="4" falsecount="0"/>
+      <line num="17" count="5" type="cond" truecount="5" falsecount="0"/>
+      <line num="18" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="21" count="3" type="cond" truecount="4" falsecount="0"/>
+      <line num="24" count="3" type="stmt"/>
+    </file>
+    <file name="shipping.ts" path="/home/hippolyte/Bureau/BAC2/Dev 3/dev3-backend-tp1/server/src/utils/shipping.ts">
+      <metrics statements="16" coveredstatements="16" conditionals="14" coveredconditionals="14" methods="1" coveredmethods="1"/>
+      <line num="44" count="1" type="stmt"/>
+      <line num="50" count="18" type="cond" truecount="2" falsecount="0"/>
+      <line num="51" count="1" type="stmt"/>
+      <line num="54" count="17" type="cond" truecount="4" falsecount="0"/>
+      <line num="55" count="3" type="stmt"/>
+      <line num="59" count="14" type="stmt"/>
+      <line num="61" count="14" type="cond" truecount="2" falsecount="0"/>
+      <line num="62" count="7" type="stmt"/>
+      <line num="63" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="64" count="4" type="stmt"/>
+      <line num="66" count="3" type="stmt"/>
+      <line num="70" count="14" type="cond" truecount="2" falsecount="0"/>
+      <line num="71" count="5" type="stmt"/>
+      <line num="75" count="14" type="cond" truecount="2" falsecount="0"/>
+      <line num="76" count="3" type="stmt"/>
+      <line num="79" count="14" type="stmt"/>
+    </file>
+    <file name="userValidator.ts" path="/home/hippolyte/Bureau/BAC2/Dev 3/dev3-backend-tp1/server/src/utils/userValidator.ts">
+      <metrics statements="12" coveredstatements="12" conditionals="16" coveredconditionals="16" methods="1" coveredmethods="1"/>
+      <line num="3" count="1" type="stmt"/>
+      <line num="9" count="6" type="cond" truecount="2" falsecount="0"/>
+      <line num="10" count="1" type="stmt"/>
+      <line num="14" count="5" type="cond" truecount="4" falsecount="0"/>
+      <line num="15" count="1" type="stmt"/>
+      <line num="19" count="4" type="cond" truecount="2" falsecount="0"/>
+      <line num="20" count="1" type="stmt"/>
+      <line num="25" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="26" count="1" type="stmt"/>
+      <line num="31" count="2" type="cond" truecount="6" falsecount="0"/>
+      <line num="32" count="1" type="stmt"/>
+      <line num="36" count="1" type="stmt"/>
+    </file>
+  </project>
+</coverage>

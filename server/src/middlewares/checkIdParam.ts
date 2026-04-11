@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 export const checkIdParam = (
   req: Request,
@@ -11,6 +11,13 @@ export const checkIdParam = (
   if (!id) {
     return res.status(400).json({ 
       error: 'ID utilisateur manquant' 
+    });
+  }
+
+  // Vérifie le type d'ID
+  if (typeof id !== 'string') {
+    return res.status(400).json({ 
+      error: 'ID utilisateur non valide' 
     });
   }
 

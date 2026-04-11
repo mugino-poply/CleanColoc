@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import User from '../models/User'
 
 export const welcome = async (req: Request, res: Response) => {
@@ -58,7 +58,8 @@ export const getData = async (req: Request, res: Response) => {
 
 export const getUser = async (req: Request, res: Response) => {
     try {
-        const user = await User.findByPk(req.params.id);
+        const id = req.params.id as string
+        const user = await User.findByPk(id);
         if (!user) {
             return res.status(404).json({ error: 'Utilisateur non trouvé' });
         }
@@ -80,7 +81,8 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
-        const user = await User.findByPk(req.params.id);
+        const id = req.params.id as string
+        const user = await User.findByPk(id);
         if (!user) {
             return res.status(404).json({ error: 'Utilisateur non trouvé' });
         }
