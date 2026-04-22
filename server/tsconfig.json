@@ -20,7 +20,7 @@
     // Interop
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
+    "resolveJsonModule": true, 
 
     // Stricter Typechecking Options
     "strict": true,
