@@ -19,8 +19,6 @@ export default function LandingPage() {
           min-height: 100vh;
         }
 
-        .font-display { font-family: 'Bebas Neue', sans-serif; }
-
         /* Buttons */
         .btn-outline {
           border-radius: 999px;
@@ -142,7 +140,7 @@ export default function LandingPage() {
         .hero__cta {
           display: flex;
           gap: 16px;
-          margin-bottom: 80px;
+          margin-bottom: 60px;
           flex-wrap: wrap;
           justify-content: center;
         }
@@ -151,26 +149,106 @@ export default function LandingPage() {
         .features {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
+          gap: 16px;
           max-width: 680px;
           width: 100%;
         }
-        .feature-card {
-          text-align: center;
-        }
+        .feature-card { text-align: center; }
         .feature-card__icon  { font-size: 1.8rem; margin-bottom: 12px; }
         .feature-card__title { font-size: .95rem; font-weight: 600; margin-bottom: 6px; }
         .feature-card__text  { color: rgba(255,255,255,.5); font-size: .82rem; line-height: 1.5; }
 
-        /* Responsive */
-        @media (max-width: 720px) {
-          .top-nav { padding: 16px 20px; }
-          .top-nav__brand { font-size: 1.1rem; }
-          .features { grid-template-columns: 1fr; max-width: 360px; }
-          .hero__cta { flex-direction: column; align-items: center; }
+        /* ── RESPONSIVE TABLETTE ── */
+        @media (max-width: 768px) {
+          .top-nav {
+            padding: 16px 20px;
+          }
+          .top-nav__brand {
+            font-size: 1.2rem;
+          }
+          .top-nav__brand svg {
+            width: 28px;
+            height: 28px;
+          }
+          .hero {
+            padding: 32px 20px 48px;
+          }
+          .hero__subtitle {
+            font-size: 1rem;
+          }
+          .features {
+            grid-template-columns: 1fr 1fr;
+            max-width: 480px;
+            gap: 12px;
+          }
+          /* La 3e carte prend toute la largeur */
+          .feature-card:last-child {
+            grid-column: 1 / -1;
+          }
         }
+
+        /* ── RESPONSIVE MOBILE ── */
         @media (max-width: 480px) {
-          .hero__title { font-size: 4.5rem; }
+          .top-nav {
+            padding: 14px 16px;
+          }
+          .top-nav__brand {
+            font-size: 1rem;
+            gap: 8px;
+          }
+          .top-nav__brand svg {
+            width: 24px;
+            height: 24px;
+          }
+          /* Boutons navbar plus compacts */
+          .top-nav__actions .btn-sm {
+            padding: 6px 14px;
+            font-size: .7rem;
+          }
+
+          .hero {
+            padding: 24px 16px 40px;
+          }
+          .hero__eyebrow {
+            font-size: .65rem;
+            letter-spacing: .2em;
+          }
+          .hero__title {
+            font-size: clamp(3.5rem, 18vw, 5rem);
+            margin-bottom: 16px;
+          }
+          .hero__subtitle {
+            font-size: .95rem;
+            margin-bottom: 28px;
+          }
+          /* Boutons CTA en colonne sur mobile */
+          .hero__cta {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 300px;
+          }
+          .hero__cta a {
+            width: 100%;
+          }
+
+          /* Feature cards en colonne */
+          .features {
+            grid-template-columns: 1fr;
+            max-width: 100%;
+            gap: 12px;
+          }
+          .feature-card:last-child {
+            grid-column: auto;
+          }
+          .card {
+            padding: 20px 16px;
+          }
+          .feature-card__icon { font-size: 1.5rem; margin-bottom: 8px; }
+          .feature-card__title { font-size: .9rem; }
+          .feature-card__text  { font-size: .8rem; }
         }
       `}</style>
 
