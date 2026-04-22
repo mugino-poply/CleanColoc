@@ -27,6 +27,7 @@
     "concurrently": "^9.2.1"
   },
   "dependencies": {
-    "bulma": "^1.0.4"
+    "bulma": "^1.0.4",
+    "next-pwa": "^5.6.0"
   }
 }
