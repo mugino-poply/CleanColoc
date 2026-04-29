@@ -1,32 +1,43 @@
 import "dotenv/config";
 import express from 'express';
-import type {Application} from 'express';
+import type { Application } from 'express';
 import { initDatabase } from './config/database';
-import { requestLogger } from './middlewares/logger'
+import { requestLogger } from './middlewares/logger';
 import { errorHandler } from "./middlewares/errorHandler";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
+// --- AJOUT : Import des routes ---
+import userRoutes from './routes/userRoutes';
 
 const startServer = async () => {
-    await initDatabase(); // On vérifie la connexion avec la DB
+    await initDatabase(); 
 
     console.log('Tous les modèles synchronisés avec la base de données.');
 
-    const app: Application = express(); // Config express
+    const app: Application = express(); 
 
-    app.use(cors());
+    app.use(cors({
+        origin: 'http://localhost:3000', // URL de ton front Next.js
+        credentials: true // Important pour autoriser les cookies (Refresh Token)
+    }));
 
-    app.use(express.json()); // important: middleware qui parse le json automatiquement
+    app.use(express.json()); 
+    app.use(cookieParser());
+    app.use(requestLogger); 
 
-    app.use(requestLogger); // middleware logger
+    // --- AJOUT : Utilisation des routes ---
+    // Toutes les routes définies dans userRoutes commenceront par /api/users
+    app.use('/api/users', userRoutes);
 
-    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); // swagger
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); 
 
-    app.use(errorHandler); // Gestion d'erreurs
+    // Le errorHandler doit TOUJOURS être après les routes
+    app.use(errorHandler); 
 
-    const port = 3000; // Config port
+    const port = 3001; 
 
     app.listen(port, () => {
         console.log(`Serveur lancé sur http://localhost:${port}`)

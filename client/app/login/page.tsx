@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -18,10 +17,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      // MODIFICATION : Port 3001 et noms des colonnes mail_user / password_user
+      const res = await fetch("http://localhost:3001/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          mail_user: email, 
+          password_user: password 
+        }),
       });
 
       const data = await res.json();
@@ -29,10 +32,11 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.message || "Email ou mot de passe incorrect.");
       } else {
+        if(data.accessToken) localStorage.setItem('token', data.accessToken);
         router.push("/dashboard");
       }
     } catch {
-      setError("Une erreur est survenue. Réessayez.");
+      setError("Une erreur est survenue. Vérifiez que le serveur tourne sur le port 3001.");
     } finally {
       setLoading(false);
     }
@@ -111,7 +115,6 @@ export default function LoginPage() {
           flex-direction: column;
         }
 
-        /* Nav */
         .top-nav {
           display: flex;
           align-items: center;
@@ -128,7 +131,6 @@ export default function LoginPage() {
         }
         .top-nav__actions { display: flex; gap: 12px; }
 
-        /* Center layout */
         .login-center {
           flex: 1;
           display: flex;
@@ -137,7 +139,6 @@ export default function LoginPage() {
           padding: 32px 24px 64px;
         }
 
-        /* Card */
         .login-card {
           background: rgba(255,255,255,.1);
           backdrop-filter: blur(12px);
@@ -170,10 +171,7 @@ export default function LoginPage() {
           margin-bottom: 32px;
         }
 
-        /* Form */
-        .form-field {
-          margin-bottom: 18px;
-        }
+        .form-field { margin-bottom: 18px; }
         .form-field label {
           display: block;
           font-size: .78rem;
@@ -189,48 +187,10 @@ export default function LoginPage() {
           border: 1.5px solid rgba(255,255,255,.2);
           border-radius: 12px;
           padding: 13px 16px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: .95rem;
           color: #fff;
           outline: none;
-          transition: border-color .18s, background .18s;
-        }
-        .form-field input::placeholder { color: rgba(255,255,255,.35); }
-        .form-field input:focus {
-          border-color: rgba(255,255,255,.6);
-          background: rgba(255,255,255,.18);
         }
 
-        .form-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 28px;
-        }
-        .form-row label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: .82rem;
-          color: rgba(255,255,255,.6);
-          cursor: pointer;
-        }
-        .form-row input[type="checkbox"] {
-          width: 16px;
-          height: 16px;
-          accent-color: #8ec450;
-          cursor: pointer;
-        }
-        .forgot-link {
-          font-size: .82rem;
-          color: rgba(255,255,255,.6);
-          text-decoration: underline;
-          text-underline-offset: 3px;
-          transition: color .15s;
-        }
-        .forgot-link:hover { color: #fff; }
-
-        /* Error */
         .form-error {
           background: rgba(220,60,60,.25);
           border: 1px solid rgba(220,60,60,.4);
@@ -241,27 +201,6 @@ export default function LoginPage() {
           margin-bottom: 20px;
         }
 
-        /* Divider */
-        .divider {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin: 20px 0;
-        }
-        .divider::before, .divider::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: rgba(255,255,255,.2);
-        }
-        .divider span {
-          font-size: .75rem;
-          color: rgba(255,255,255,.4);
-          letter-spacing: .08em;
-          text-transform: uppercase;
-        }
-
-        /* Register link */
         .register-prompt {
           text-align: center;
           font-size: .85rem;
@@ -274,103 +213,48 @@ export default function LoginPage() {
           color: #fff;
           font-weight: 600;
           text-decoration: underline;
-          text-underline-offset: 3px;
-        }
-        .register-prompt a:hover { color: #c8e8a0; }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-          .top-nav { padding: 14px 16px; }
-          .top-nav__brand { font-size: 1rem; gap: 8px; }
-          .top-nav__brand svg { width: 24px; height: 24px; }
-          .top-nav__actions .btn-sm { padding: 6px 14px; font-size: .7rem; }
-          .login-card { padding: 28px 20px; border-radius: 20px; }
-          .login-card__title { font-size: 2.2rem; }
-          .form-row { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
       `}</style>
 
       <div className="login-shell">
-
-        {/* ── Nav ── */}
         <nav className="top-nav anim-1">
           <Link href="/" className="top-nav__brand">
             <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
-              <path
-                d="M4 15L16 5L28 15V28H21V21H11V28H4V15Z"
-                stroke="white"
-                strokeWidth="2"
-                fill="rgba(255,255,255,.12)"
-              />
+              <path d="M4 15L16 5L28 15V28H21V21H11V28H4V15Z" stroke="white" strokeWidth="2" fill="rgba(255,255,255,.12)" />
               <line x1="10" y1="12" x2="22" y2="12" stroke="white" strokeWidth="1.5" />
             </svg>
             CLEAN&apos; COLOC
           </Link>
-          <div className="top-nav__actions">
-            <Link href="/register" className="btn-solid btn-sm">
-              S&apos;inscrire
-            </Link>
-          </div>
         </nav>
 
-        {/* ── Form ── */}
         <main className="login-center">
           <div className="login-card anim-2">
-            <p className="login-card__eyebrow">Bon retour </p>
+            <p className="login-card__eyebrow">Content de vous revoir</p>
             <h1 className="login-card__title">Connexion</h1>
-            <p className="login-card__sub">Accédez à votre colocation en un instant.</p>
+            <p className="login-card__sub">Accédez à votre espace colocation.</p>
 
             <form onSubmit={handleSubmit} className="anim-3">
               <div className="form-field">
                 <label htmlFor="email">Adresse email</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="vous@exemple.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
+                <input id="email" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
-
               <div className="form-field">
                 <label htmlFor="password">Mot de passe</label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="mon-Mot-de-passe"
-                />
-              </div>
-
-              <div className="form-row">
-                <label>
-                  <input type="checkbox" />
-                  Se souvenir de moi
-                </label>
-                <Link href="/forgot-password" className="forgot-link">
-                  Mot de passe oublié ?
-                </Link>
+                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
 
               {error && <div className="form-error">{error}</div>}
 
               <button type="submit" className="btn-solid" disabled={loading}>
-                {loading ? "Connexion…" : "Se connecter →"}
+                {loading ? "Connexion..." : "Se connecter →"}
               </button>
             </form>
 
             <div className="register-prompt">
-              Pas encore de compte ?{" "}
-              <Link href="/register">Créer un compte</Link>
+              Pas encore de compte ? <Link href="/register">S&apos;inscrire</Link>
             </div>
           </div>
         </main>
-
       </div>
     </>
   );

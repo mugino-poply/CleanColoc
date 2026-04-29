@@ -42,10 +42,15 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("http://localhost:3001/api/users/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ 
+          prenom_user: firstName, 
+          nom_user: lastName, 
+          mail_user: email, 
+          password_user: password 
+        }),
       });
 
       const data = await res.json();
@@ -56,7 +61,7 @@ export default function RegisterPage() {
         router.push("/login");
       }
     } catch {
-      setError("Une erreur est survenue. Réessayez.");
+      setError("Une erreur est survenue. Vérifiez que le serveur est lancé sur le port 3001.");
     } finally {
       setLoading(false);
     }
@@ -135,7 +140,6 @@ export default function RegisterPage() {
           flex-direction: column;
         }
 
-        /* Nav */
         .top-nav {
           display: flex;
           align-items: center;
@@ -152,7 +156,6 @@ export default function RegisterPage() {
         }
         .top-nav__actions { display: flex; gap: 12px; }
 
-        /* Center layout */
         .register-center {
           flex: 1;
           display: flex;
@@ -161,7 +164,6 @@ export default function RegisterPage() {
           padding: 32px 24px 64px;
         }
 
-        /* Card */
         .register-card {
           background: rgba(255,255,255,.1);
           backdrop-filter: blur(12px);
@@ -194,7 +196,6 @@ export default function RegisterPage() {
           margin-bottom: 28px;
         }
 
-        /* Form */
         .form-row-2 {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -225,13 +226,11 @@ export default function RegisterPage() {
           outline: none;
           transition: border-color .18s, background .18s;
         }
-        .form-field input::placeholder { color: rgba(255,255,255,.35); }
         .form-field input:focus {
           border-color: rgba(255,255,255,.6);
           background: rgba(255,255,255,.18);
         }
 
-        /* Password strength */
         .strength-bars {
           display: flex;
           gap: 4px;
@@ -245,7 +244,6 @@ export default function RegisterPage() {
           transition: background .3s;
         }
 
-        /* Terms */
         .terms-row {
           display: flex;
           align-items: flex-start;
@@ -271,9 +269,7 @@ export default function RegisterPage() {
           text-decoration: underline;
           text-underline-offset: 3px;
         }
-        .terms-row a:hover { color: #c8e8a0; }
 
-        /* Error */
         .form-error {
           background: rgba(220,60,60,.25);
           border: 1px solid rgba(220,60,60,.4);
@@ -284,7 +280,6 @@ export default function RegisterPage() {
           margin-bottom: 20px;
         }
 
-        /* Login link */
         .login-prompt {
           text-align: center;
           font-size: .85rem;
@@ -297,169 +292,76 @@ export default function RegisterPage() {
           color: #fff;
           font-weight: 600;
           text-decoration: underline;
-          text-underline-offset: 3px;
         }
-        .login-prompt a:hover { color: #c8e8a0; }
 
-        /* Responsive */
         @media (max-width: 480px) {
-          .top-nav { padding: 14px 16px; }
-          .top-nav__brand { font-size: 1rem; gap: 8px; }
-          .top-nav__brand svg { width: 24px; height: 24px; }
-          .top-nav__actions .btn-sm { padding: 6px 14px; font-size: .7rem; }
-          .register-card { padding: 28px 20px; border-radius: 20px; }
-          .register-card__title { font-size: 2.2rem; }
+          .register-card { padding: 28px 20px; }
           .form-row-2 { grid-template-columns: 1fr; gap: 0; }
         }
       `}</style>
 
       <div className="register-shell">
-
-        {/* ── Nav ── */}
         <nav className="top-nav anim-1">
           <Link href="/" className="top-nav__brand">
             <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
-              <path
-                d="M4 15L16 5L28 15V28H21V21H11V28H4V15Z"
-                stroke="white"
-                strokeWidth="2"
-                fill="rgba(255,255,255,.12)"
-              />
+              <path d="M4 15L16 5L28 15V28H21V21H11V28H4V15Z" stroke="white" strokeWidth="2" fill="rgba(255,255,255,.12)" />
               <line x1="10" y1="12" x2="22" y2="12" stroke="white" strokeWidth="1.5" />
             </svg>
             CLEAN&apos; COLOC
           </Link>
           <div className="top-nav__actions">
-            <Link href="/login" className="btn-outline btn-sm">
-              Se connecter
-            </Link>
+            <Link href="/login" className="btn-outline btn-sm">Se connecter</Link>
           </div>
         </nav>
 
-        {/* ── Form ── */}
         <main className="register-center">
           <div className="register-card anim-2">
-            <p className="register-card__eyebrow">Bienvenue 🏠</p>
+            <p className="register-card__eyebrow">Bienvenue</p>
             <h1 className="register-card__title">Inscription</h1>
             <p className="register-card__sub">Créez votre compte et rejoignez votre colocation.</p>
 
             <form onSubmit={handleSubmit} className="anim-3">
-
-              {/* Prénom / Nom */}
               <div className="form-row-2">
                 <div className="form-field">
                   <label htmlFor="firstName">Prénom</label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    placeholder="Marie"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    autoComplete="given-name"
-                  />
+                  <input id="firstName" type="text" placeholder="Marie" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                 </div>
                 <div className="form-field">
                   <label htmlFor="lastName">Nom</label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    placeholder="Dupont"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    autoComplete="family-name"
-                  />
+                  <input id="lastName" type="text" placeholder="Dupont" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
                 </div>
               </div>
-
-              {/* Email */}
               <div className="form-field">
                 <label htmlFor="email">Adresse email</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="vous@exemple.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
+                <input id="email" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
-
-              {/* Mot de passe */}
               <div className="form-field">
                 <label htmlFor="password">Mot de passe</label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                />
-                {/* Indicateur de force */}
+                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 <div className="strength-bars">
                   {[0, 1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="strength-bar"
-                      style={{
-                        background:
-                          i < strengthScore
-                            ? strengthColors[strengthScore - 1]
-                            : "rgba(255,255,255,.15)",
-                      }}
-                    />
+                    <div key={i} className="strength-bar" style={{ background: i < strengthScore ? strengthColors[strengthScore - 1] : "rgba(255,255,255,.15)" }} />
                   ))}
                 </div>
               </div>
-
-              {/* Confirmer mot de passe */}
               <div className="form-field" style={{ marginBottom: "20px" }}>
                 <label htmlFor="confirm">Confirmer le mot de passe</label>
-                <input
-                  id="confirm"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                />
+                <input id="confirm" type="password" placeholder="••••••••" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
               </div>
-
-              {/* CGU */}
               <div className="terms-row">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={terms}
-                  onChange={(e) => setTerms(e.target.checked)}
-                />
-                <span>
-                  J&apos;accepte les{" "}
-                  <Link href="/terms">conditions d&apos;utilisation</Link>{" "}
-                  et la{" "}
-                  <Link href="/privacy">politique de confidentialité</Link>
-                </span>
+                <input type="checkbox" id="terms" checked={terms} onChange={(e) => setTerms(e.target.checked)} />
+                <span>J&apos;accepte les <Link href="/terms">conditions</Link></span>
               </div>
 
               {error && <div className="form-error">{error}</div>}
 
               <button type="submit" className="btn-solid" disabled={loading}>
-                {loading ? "Création du compte…" : "Créer mon compte →"}
+                {loading ? "Création..." : "Créer mon compte →"}
               </button>
             </form>
-
-            <div className="login-prompt">
-              Déjà un compte ?{" "}
-              <Link href="/login">Se connecter</Link>
-            </div>
+            <div className="login-prompt">Déjà un compte ? <Link href="/login">Se connecter</Link></div>
           </div>
         </main>
-
       </div>
     </>
   );
