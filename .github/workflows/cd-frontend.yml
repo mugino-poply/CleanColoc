@@ -10,23 +10,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
+
       - name: Install dependencies and Build
         run: |
           npm install
           npm run build
         working-directory: ./client
         env:
-          NEXT_PUBLIC_API_URL: http://${{ secrets.SERVER_IP }}:3000/api
-      - name: Deploy to VPS via SCP
-        uses: appleboy/scp-action@v0.1.4
+          NEXT_PUBLIC_API_URL: https://cleancoloc.ddns.net/api
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "client/out/*"
-          target: "/var/www/html/"
-          strip_components: 2
+          script: |
+            cd /var/www/CleanColoc
+            git pull origin main
+            cd client
+            npm install
+            npm run build
+            pm2 restart cleancoloc
