@@ -24,10 +24,18 @@
   },
   "homepage": "https://github.com/mugino-poply/CleanColoc#readme",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/uuid": "^10.0.0",
     "concurrently": "^9.2.1"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bulma": "^1.0.4",
-    "next-pwa": "^5.6.0"
+    "cookie-parser": "^1.4.7",
+    "jsonwebtoken": "^9.0.3",
+    "next-pwa": "^5.6.0",
+    "uuid": "^14.0.0"
   }
 }
