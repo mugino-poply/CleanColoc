@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -315,7 +316,7 @@ export default function LoginPage() {
         {/* ── Form ── */}
         <main className="login-center">
           <div className="login-card anim-2">
-            <p className="login-card__eyebrow">Bon retour 👋</p>
+            <p className="login-card__eyebrow">Bon retour </p>
             <h1 className="login-card__title">Connexion</h1>
             <p className="login-card__sub">Accédez à votre colocation en un instant.</p>
 
@@ -342,7 +343,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete="current-password"
+                  autoComplete="mon-Mot-de-passe"
                 />
               </div>
 
