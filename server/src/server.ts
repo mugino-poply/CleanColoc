@@ -1,36 +1,35 @@
 import "dotenv/config";
 import express from 'express';
-import type {Application} from 'express';
+import type { Application } from 'express';
 import { initDatabase } from './config/database';
-import { requestLogger } from './middlewares/logger'
-import { errorHandler } from "./middlewares/errorHandler";
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "./config/swagger";
+import { requestLogger } from './middlewares/logger';
+import { errorHandler } from './middlewares/errorHandler';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 import cors from 'cors';
-
+import taskRoutes from './routes/taskRoutes';
 
 const startServer = async () => {
-    await initDatabase(); // On vérifie la connexion avec la DB
+  await initDatabase();
+  console.log('Connexion à la base de données établie.');
 
-    console.log('Tous les modèles synchronisés avec la base de données.');
+  const app: Application = express();
 
-    const app: Application = express(); // Config express
+  app.use(cors());
+  app.use(express.json());
+  app.use(requestLogger);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-    app.use(cors());
+  // Routes
+  app.use('/api/tasks', taskRoutes);
 
-    app.use(express.json()); // important: middleware qui parse le json automatiquement
+  // Toujours en dernier
+  app.use(errorHandler);
 
-    app.use(requestLogger); // middleware logger
-
-    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); // swagger
-
-    app.use(errorHandler); // Gestion d'erreurs
-
-    const port = 3000; // Config port
-
-    app.listen(port, () => {
-        console.log(`Serveur lancé sur http://localhost:${port}`)
-    });
+  const port = 3000;
+  app.listen(port, () => {
+    console.log(`Serveur lancé sur http://localhost:${port}`);
+  });
 };
 
 startServer().catch((err) => {
