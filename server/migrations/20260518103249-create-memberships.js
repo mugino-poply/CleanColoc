@@ -2,34 +2,21 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Tasks', {
+    await queryInterface.createTable('Memberships', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
-      title: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      description: {
-        type: Sequelize.TEXT,
-        allowNull: true,
-      },
-      status: {
-        type: Sequelize.ENUM('pending', 'in_progress', 'done'),
-        allowNull: false,
-        defaultValue: 'pending',
-      },
-      assignedTo: {
+      userId: {
         type: Sequelize.UUID,
-        allowNull: true,
+        allowNull: false,
         references: {
           model: 'Users',
           key: 'id',
         },
-        onDelete: 'SET NULL',
+        onDelete: 'CASCADE',
       },
       colocationId: {
         type: Sequelize.UUID,
@@ -40,18 +27,10 @@ module.exports = {
         },
         onDelete: 'CASCADE',
       },
-      isRecurring: {
-        type: Sequelize.BOOLEAN,
+      role: {
+        type: Sequelize.ENUM('admin', 'member'),
         allowNull: false,
-        defaultValue: false,
-      },
-      recurringInterval: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      dueDate: {
-        type: Sequelize.DATE,
-        allowNull: true,
+        defaultValue: 'member',
       },
       createdAt: {
         type: Sequelize.DATE,
@@ -66,9 +45,16 @@ module.exports = {
         allowNull: true,
       },
     });
+
+    await queryInterface.addConstraint('Memberships', {
+      fields: ['userId'],
+      type: 'unique',
+      name: 'unique_user_membership',
+    });
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable('Tasks');
+    await queryInterface.removeConstraint('Memberships', 'unique_user_membership');
+    await queryInterface.dropTable('Memberships');
   },
 };
