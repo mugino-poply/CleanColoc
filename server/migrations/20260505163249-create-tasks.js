@@ -1,12 +1,11 @@
 'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('Tasks', {
       id: {
-        type: Sequelize.INTEGER,
-        autoIncrement: true,
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
@@ -24,12 +23,22 @@ module.exports = {
         defaultValue: 'pending',
       },
       assignedTo: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: true,
+        references: {
+          model: 'Users',
+          key: 'id',
+        },
+        onDelete: 'SET NULL',
       },
-      colocId: {
-        type: Sequelize.INTEGER,
+      colocationId: {
+        type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: 'Colocations',
+          key: 'id',
+        },
+        onDelete: 'CASCADE',
       },
       isRecurring: {
         type: Sequelize.BOOLEAN,
@@ -51,6 +60,10 @@ module.exports = {
       updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
+      },
+      deletedAt: {
+        type: Sequelize.DATE,
+        allowNull: true,
       },
     });
   },
