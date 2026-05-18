@@ -2,30 +2,32 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
 interface TaskAttributes {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   status: 'pending' | 'in_progress' | 'done';
-  assignedTo?: number;
-  colocId: number;
+  assignedTo?: string;
+  colocationId: string;
   isRecurring: boolean;
   recurringInterval?: string;
   dueDate?: Date;
+  deletedAt?: Date;
 }
 
 interface TaskCreationAttributes extends Optional<TaskAttributes, 'id'> {}
 
 class Task extends Model<TaskAttributes, TaskCreationAttributes>
   implements TaskAttributes {
-  public id!: number;
+  public id!: string;
   public title!: string;
   public description?: string;
   public status!: 'pending' | 'in_progress' | 'done';
-  public assignedTo?: number;
-  public colocId!: number;
+  public assignedTo?: string;
+  public colocationId!: string;
   public isRecurring!: boolean;
   public recurringInterval?: string;
   public dueDate?: Date;
+  public deletedAt?: Date;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -34,9 +36,10 @@ class Task extends Model<TaskAttributes, TaskCreationAttributes>
 Task.init(
   {
     id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
+      allowNull: false,
     },
     title: {
       type: DataTypes.STRING,
@@ -52,11 +55,11 @@ Task.init(
       defaultValue: 'pending',
     },
     assignedTo: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
     },
-    colocId: {
-      type: DataTypes.INTEGER,
+    colocationId: {
+      type: DataTypes.UUID,
       allowNull: false,
     },
     isRecurring: {
@@ -77,6 +80,7 @@ Task.init(
     sequelize,
     tableName: 'Tasks',
     modelName: 'Task',
+    paranoid: true,
   }
 );
 
