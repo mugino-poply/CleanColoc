@@ -8,43 +8,39 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-
-// --- AJOUT : Import des routes ---
 import userRoutes from './routes/userRoutes';
+import taskRoutes from './routes/taskRoutes';
 
 const startServer = async () => {
-    await initDatabase(); 
+    await initDatabase();
+    console.log('Connexion à la base de données établie.');
 
-    console.log('Tous les modèles synchronisés avec la base de données.');
-
-    const app: Application = express(); 
+    const app: Application = express();
 
     app.use(cors({
-        origin: 'http://localhost:3000', // URL de ton front Next.js
-        credentials: true // Important pour autoriser les cookies (Refresh Token)
+        origin: 'http://localhost:3000',
+        credentials: true
     }));
 
-    app.use(express.json()); 
+    app.use(express.json());
     app.use(cookieParser());
-    app.use(requestLogger); 
+    app.use(requestLogger);
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-    // --- AJOUT : Utilisation des routes ---
-    // Toutes les routes définies dans userRoutes commenceront par /api/users
+    // Routes
     app.use('/api/users', userRoutes);
+    app.use('/api/tasks', taskRoutes);
 
-    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec)); 
+    // Toujours en dernier
+    app.use(errorHandler);
 
-    // Le errorHandler doit TOUJOURS être après les routes
-    app.use(errorHandler); 
-
-    const port = 3001; 
-
+    const port = 3001;
     app.listen(port, () => {
-        console.log(`Serveur lancé sur http://localhost:${port}`)
+        console.log(`Serveur lancé sur http://localhost:${port}`);
     });
 };
 
 startServer().catch((err) => {
-  console.error('Erreur au démarrage du serveur :', err);
-  process.exit(1);
+    console.error('Erreur au démarrage du serveur :', err);
+    process.exit(1);
 });
