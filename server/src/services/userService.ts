@@ -1,15 +1,9 @@
-import User from '../models/user.js';
-import { v4 as uuidv4 } from 'uuid'; // Si tu veux générer des IDs textuels uniques
+import User from '../models/user';
 
 export class UserService {
-  /**
-   * Crée un nouvel utilisateur dans la base de données
-   * Logique métier : vérification d'existence, génération d'ID
-   */
   static async registerUser(userData: any) {
-    // 1. Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ 
-      where: { mail_user: userData.mail_user } 
+    const existingUser = await User.findOne({
+      where: { email: userData.email },
     });
 
     if (existingUser) {
@@ -18,25 +12,21 @@ export class UserService {
       throw error;
     }
 
-    // 2. Préparation des données (on génère un ID car ta table attend un texte)
     const newUser = await User.create({
-      id_user: uuidv4(), // Génère un ID unique type string
-      nom_user: userData.nom_user,
-      mail_user: userData.mail_user,
-      password_user: userData.password_user, // Le hook dans le modèle va le hacher !
-      avatar_url: userData.avatar_url || null
+      username: userData.username,
+      email: userData.email,
+      password: userData.password,
+      avatarUrl: userData.avatarUrl || undefined,
     });
 
-    // 3. On retourne l'utilisateur sans le mot de passe pour la sécurité
-    const { password_user, ...userWithoutPassword } = newUser.toJSON();
+    const { password, ...userWithoutPassword } = newUser.toJSON();
     return userWithoutPassword;
   }
 
-  /**
-   * Récupère un utilisateur par son ID
-   */
   static async getUserById(id: string) {
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      attributes: ['id', 'username', 'email', 'avatarUrl', 'createdAt'],
+    });
     if (!user) {
       const error: any = new Error("Utilisateur non trouvé");
       error.status = 404;

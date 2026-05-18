@@ -1,12 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import Task from '../models/Task';
 
 // GET /api/tasks
-export const getAllTasks = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllTasks = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { colocId } = req.query;
+    const { colocationId } = req.query;
     const tasks = await Task.findAll({
-      where: colocId ? { colocId: Number(colocId) } : {},
+      where: colocationId ? { colocationId: String(colocationId) } : {},
+      attributes: ['id', 'title', 'description', 'status', 'assignedTo', 'colocationId', 'isRecurring', 'recurringInterval', 'dueDate', 'createdAt', 'updatedAt'],
     });
     res.status(200).json(tasks);
   } catch (error) {
@@ -15,9 +16,11 @@ export const getAllTasks = async (req: Request, res: Response, next: NextFunctio
 };
 
 // GET /api/tasks/:id
-export const getTaskById = async (req: Request, res: Response, next: NextFunction) => {
+export const getTaskById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(Number(req.params.id));
+    const task = await Task.findByPk(req.params.id, {
+      attributes: ['id', 'title', 'description', 'status', 'assignedTo', 'colocationId', 'isRecurring', 'recurringInterval', 'dueDate', 'createdAt', 'updatedAt'],
+    });
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
@@ -29,17 +32,17 @@ export const getTaskById = async (req: Request, res: Response, next: NextFunctio
 };
 
 // POST /api/tasks
-export const createTask = async (req: Request, res: Response, next: NextFunction) => {
+export const createTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { title, description, colocId, assignedTo, isRecurring, recurringInterval, dueDate } = req.body;
-    if (!title || !colocId) {
-      res.status(400).json({ message: 'Les champs title et colocId sont obligatoires.' });
+    const { title, description, colocationId, assignedTo, isRecurring, recurringInterval, dueDate } = req.body;
+    if (!title || !colocationId) {
+      res.status(400).json({ message: 'Les champs title et colocationId sont obligatoires.' });
       return;
     }
     const task = await Task.create({
       title,
       description,
-      colocId,
+      colocationId,
       assignedTo,
       isRecurring: isRecurring ?? false,
       recurringInterval,
@@ -53,9 +56,9 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
 };
 
 // PUT /api/tasks/:id
-export const updateTask = async (req: Request, res: Response, next: NextFunction) => {
+export const updateTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(Number(req.params.id));
+    const task = await Task.findByPk(req.params.id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
@@ -68,9 +71,9 @@ export const updateTask = async (req: Request, res: Response, next: NextFunction
 };
 
 // PATCH /api/tasks/:id/assign
-export const assignTask = async (req: Request, res: Response, next: NextFunction) => {
+export const assignTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(Number(req.params.id));
+    const task = await Task.findByPk(req.params.id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
@@ -88,9 +91,9 @@ export const assignTask = async (req: Request, res: Response, next: NextFunction
 };
 
 // PATCH /api/tasks/:id/complete
-export const completeTask = async (req: Request, res: Response, next: NextFunction) => {
+export const completeTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(Number(req.params.id));
+    const task = await Task.findByPk(req.params.id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
@@ -103,9 +106,9 @@ export const completeTask = async (req: Request, res: Response, next: NextFuncti
 };
 
 // DELETE /api/tasks/:id
-export const deleteTask = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(Number(req.params.id));
+    const task = await Task.findByPk(req.params.id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
