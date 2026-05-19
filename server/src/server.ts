@@ -18,15 +18,29 @@ const startServer = async () => {
 
     const app: Application = express();
 
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3002',
+        'https://cleancoloc.ddns.net',
+    ];
+
     app.use(cors({
-        origin: 'http://localhost:3000',
-        credentials: true
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error(`CORS bloqué pour l'origine : ${origin}`));
+            }
+        },
+        credentials: true,
     }));
 
     app.use(express.json());
     app.use(cookieParser());
     app.use(requestLogger);
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+    app.use('/api/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     // Routes
     app.use('/api/users', userRoutes);
@@ -36,7 +50,7 @@ const startServer = async () => {
     // Toujours en dernier
     app.use(errorHandler);
 
-    const port = 3001;
+    const port = parseInt(process.env['PORT'] ?? '3001', 10);
     app.listen(port, () => {
         console.log(`Serveur lancé sur http://localhost:${port}`);
     });
