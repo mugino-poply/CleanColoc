@@ -1,33 +1,23 @@
 import type { Request, Response, NextFunction } from 'express';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export const checkIdParam = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   const id = req.params.id;
 
-  // Vérifie si l'ID existe
   if (!id) {
-    return res.status(400).json({ 
-      error: 'ID utilisateur manquant' 
-    });
+    res.status(400).json({ error: 'ID manquant.' });
+    return;
   }
 
-  // Vérifie le type d'ID
-  if (typeof id !== 'string') {
-    return res.status(400).json({ 
-      error: 'ID utilisateur non valide' 
-    });
+  if (!UUID_REGEX.test(id)) {
+    res.status(400).json({ error: 'ID invalide (format UUID attendu).' });
+    return;
   }
 
-  // Vérifie si c'est un nombre entier valide
-  if (!/^\d+$/.test(id)) {
-    return res.status(400).json({ 
-      error: 'ID utilisateur invalide (doit être un nombre)' 
-    });
-  }
-
-  // Passe à la route suivante
   next();
 };

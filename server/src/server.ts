@@ -10,6 +10,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import userRoutes from './routes/userRoutes';
 import taskRoutes from './routes/taskRoutes';
+import colocationRoutes from './routes/colocationRoutes';
 
 const startServer = async () => {
     await initDatabase();
@@ -30,6 +31,7 @@ const startServer = async () => {
     // Routes
     app.use('/api/users', userRoutes);
     app.use('/api/tasks', taskRoutes);
+    app.use('/api/colocations', colocationRoutes);
 
     // Toujours en dernier
     app.use(errorHandler);

@@ -31,8 +31,6 @@ const swaggerOptions = {
      */
     apis: [
         path.resolve(process.cwd(), "./src/routes/*.ts"),
-        path.resolve(process.cwd(), "./routes/*.ts"),
-        path.resolve(process.cwd(), "./dist/routes/*.js"), 
     ],
 };
 

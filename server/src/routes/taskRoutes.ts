@@ -27,9 +27,10 @@ const router = Router();
  *     tags: [Tasks]
  *     parameters:
  *       - in: query
- *         name: colocId
+ *         name: colocationId
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *         description: Filtrer par colocation
  *     responses:
  *       200:
@@ -50,7 +51,8 @@ router.get('/', getAllTasks);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: La tâche
@@ -75,16 +77,18 @@ router.get('/:id', checkIdParam, getTaskById);
  *             type: object
  *             required:
  *               - title
- *               - colocId
+ *               - colocationId
  *             properties:
  *               title:
  *                 type: string
  *               description:
  *                 type: string
- *               colocId:
- *                 type: integer
+ *               colocationId:
+ *                 type: string
+ *                 format: uuid
  *               assignedTo:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *               isRecurring:
  *                 type: boolean
  *               recurringInterval:
@@ -113,7 +117,8 @@ router.post('/', createTask);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *     requestBody:
  *       required: true
  *       content:
@@ -129,7 +134,8 @@ router.post('/', createTask);
  *                 type: string
  *                 enum: [pending, in_progress, done]
  *               assignedTo:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *               isRecurring:
  *                 type: boolean
  *               recurringInterval:
@@ -158,7 +164,8 @@ router.put('/:id', checkIdParam, updateTask);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *     requestBody:
  *       required: true
  *       content:
@@ -169,7 +176,8 @@ router.put('/:id', checkIdParam, updateTask);
  *               - assignedTo
  *             properties:
  *               assignedTo:
- *                 type: integer
+ *                 type: string
+ *                 format: uuid
  *     responses:
  *       200:
  *         description: Tâche assignée
@@ -193,7 +201,8 @@ router.patch('/:id/assign', checkIdParam, assignTask);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Tâche marquée comme terminée
@@ -215,7 +224,8 @@ router.patch('/:id/complete', checkIdParam, completeTask);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *     responses:
  *       204:
  *         description: Tâche supprimée
