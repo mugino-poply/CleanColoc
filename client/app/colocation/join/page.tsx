@@ -6,37 +6,55 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function LoginPage() {
+export default function JoinColocationPage() {
   const router = useRouter();
-  const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { accessToken } = useAuth();
+
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Normalise la saisie : majuscules, sans espaces, max 8 chars
+  function handleCodeChange(val: string) {
+    setInviteCode(val.toUpperCase().replace(/\s/g, "").slice(0, 8));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (inviteCode.length !== 8) {
+      setError("Le code d'invitation doit comporter exactement 8 caractères.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // MODIFICATION : Port 3001 et noms des colonnes mail_user / password_user
-      const res = await apiFetch("/api/auth/login", {
+      const res = await apiFetch("/api/colocations/join", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ inviteCode }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Email ou mot de passe incorrect.");
+        if (res.status === 409) {
+          setError("Vous êtes déjà membre de cette colocation.");
+        } else if (res.status === 404) {
+          setError("Code invalide. Vérifiez qu'il n'y a pas de faute de frappe.");
+        } else {
+          setError(data.message || "Impossible de rejoindre cette colocation.");
+        }
       } else {
-        login(data.user, data.accessToken);
-        router.push("/colocation"); // au lieu de /dashboard
+        router.push("/dashboard");
       }
     } catch {
-      setError("Une erreur est survenue. Vérifiez que le serveur tourne sur le port 3001.");
+      setError("Une erreur est survenue. Vérifiez votre connexion.");
     } finally {
       setLoading(false);
     }
@@ -109,11 +127,7 @@ export default function LoginPage() {
         .anim-2 { animation: fadeUp .4s 0.12s ease both; }
         .anim-3 { animation: fadeUp .4s 0.20s ease both; }
 
-        .login-shell {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
+        .shell { min-height: 100vh; display: flex; flex-direction: column; }
 
         .top-nav {
           display: flex;
@@ -129,9 +143,8 @@ export default function LoginPage() {
           font-size: 1.5rem;
           letter-spacing: .2em;
         }
-        .top-nav__actions { display: flex; gap: 12px; }
 
-        .login-center {
+        .center {
           flex: 1;
           display: flex;
           align-items: center;
@@ -139,7 +152,7 @@ export default function LoginPage() {
           padding: 32px 24px 64px;
         }
 
-        .login-card {
+        .card {
           background: rgba(255,255,255,.1);
           backdrop-filter: blur(12px);
           border-radius: 24px;
@@ -149,7 +162,7 @@ export default function LoginPage() {
           border: 1px solid rgba(255,255,255,.15);
         }
 
-        .login-card__eyebrow {
+        .card__eyebrow {
           color: rgba(255,255,255,.45);
           font-size: .7rem;
           font-weight: 600;
@@ -157,21 +170,22 @@ export default function LoginPage() {
           text-transform: uppercase;
           margin-bottom: 8px;
         }
-        .login-card__title {
+        .card__title {
           font-family: 'Bebas Neue', sans-serif;
           font-size: 2.8rem;
           letter-spacing: .08em;
           line-height: 1;
           margin-bottom: 6px;
         }
-        .login-card__sub {
+        .card__sub {
           color: rgba(255,255,255,.55);
           font-size: .88rem;
           font-weight: 300;
           margin-bottom: 32px;
+          line-height: 1.6;
         }
 
-        .form-field { margin-bottom: 18px; }
+        .form-field { margin-bottom: 20px; }
         .form-field label {
           display: block;
           font-size: .78rem;
@@ -181,14 +195,61 @@ export default function LoginPage() {
           color: rgba(255,255,255,.7);
           margin-bottom: 8px;
         }
-        .form-field input {
+
+        /* Input stylisé pour le code : grande fonte, centré, monospace */
+        .code-input-wrapper {
+          position: relative;
+        }
+        .code-input {
           width: 100%;
           background: rgba(255,255,255,.12);
           border: 1.5px solid rgba(255,255,255,.2);
           border-radius: 12px;
-          padding: 13px 16px;
+          padding: 16px 16px;
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 2rem;
+          letter-spacing: .35em;
           color: #fff;
           outline: none;
+          text-align: center;
+          transition: border-color .18s, background .18s;
+        }
+        .code-input:focus {
+          border-color: rgba(255,255,255,.6);
+          background: rgba(255,255,255,.18);
+        }
+        .code-input::placeholder {
+          color: rgba(255,255,255,.2);
+          letter-spacing: .2em;
+        }
+
+        .code-counter {
+          text-align: right;
+          font-size: .72rem;
+          color: rgba(255,255,255,.35);
+          margin-top: 6px;
+        }
+
+        /* Barre de progression du code */
+        .code-progress {
+          height: 2px;
+          background: rgba(255,255,255,.12);
+          border-radius: 99px;
+          margin-top: 10px;
+          overflow: hidden;
+        }
+        .code-progress__bar {
+          height: 100%;
+          border-radius: 99px;
+          background: #8ec450;
+          transition: width .2s;
+        }
+
+        .form-hint {
+          margin-top: 8px;
+          font-size: .75rem;
+          color: rgba(255,255,255,.4);
+          line-height: 1.5;
         }
 
         .form-error {
@@ -209,14 +270,16 @@ export default function LoginPage() {
           padding-top: 20px;
           border-top: 1px solid rgba(255,255,255,.12);
         }
-        .register-prompt a {
-          color: #fff;
-          font-weight: 600;
-          text-decoration: underline;
+        .register-prompt a { color: #fff; font-weight: 600; text-decoration: underline; }
+
+        @media (max-width: 480px) {
+          .top-nav { padding: 16px 20px; }
+          .card { padding: 28px 20px; }
+          .code-input { font-size: 1.6rem; }
         }
       `}</style>
 
-      <div className="login-shell">
+      <div className="shell">
         <nav className="top-nav anim-1">
           <Link href="/" className="top-nav__brand">
             <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
@@ -225,33 +288,58 @@ export default function LoginPage() {
             </svg>
             CLEAN&apos; COLOC
           </Link>
+          <div>
+            <Link href="/colocation" className="btn-outline btn-sm">← Retour</Link>
+          </div>
         </nav>
 
-        <main className="login-center">
-          <div className="login-card anim-2">
-            <p className="login-card__eyebrow">Content de vous revoir</p>
-            <h1 className="login-card__title">Connexion</h1>
-            <p className="login-card__sub">Accédez à votre espace colocation.</p>
+        <main className="center">
+          <div className="card anim-2">
+            <p className="card__eyebrow">Code d&apos;invitation</p>
+            <h1 className="card__title">Rejoindre une colocation</h1>
+            <p className="card__sub">
+              Entrez le code à 8 caractères que votre colocataire vous a partagé.
+            </p>
 
             <form onSubmit={handleSubmit} className="anim-3">
               <div className="form-field">
-                <label htmlFor="email">Adresse email</label>
-                <input id="email" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <div className="form-field">
-                <label htmlFor="password">Mot de passe</label>
-                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <label htmlFor="inviteCode">Code d&apos;invitation</label>
+                <div className="code-input-wrapper">
+                  <input
+                    id="inviteCode"
+                    type="text"
+                    className="code-input"
+                    placeholder="XXXXXXXX"
+                    value={inviteCode}
+                    onChange={(e) => handleCodeChange(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    required
+                  />
+                </div>
+                <div className="code-progress">
+                  <div
+                    className="code-progress__bar"
+                    style={{ width: `${(inviteCode.length / 8) * 100}%` }}
+                  />
+                </div>
+                <p className="code-counter">{inviteCode.length} / 8</p>
+                <p className="form-hint">Le code est insensible à la casse.</p>
               </div>
 
               {error && <div className="form-error">{error}</div>}
 
-              <button type="submit" className="btn-solid" disabled={loading}>
-                {loading ? "Connexion..." : "Se connecter →"}
+              <button
+                type="submit"
+                className="btn-solid"
+                disabled={loading || inviteCode.length !== 8}
+              >
+                {loading ? "Vérification…" : "Rejoindre la colocation →"}
               </button>
             </form>
 
             <div className="register-prompt">
-              Pas encore de compte ? <Link href="/register">S&apos;inscrire</Link>
+              Pas encore de code ? <Link href="/colocation/create">Créer une colocation</Link>
             </div>
           </div>
         </main>

@@ -1,0 +1,380 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface CreateColocationResponse {
+  id: string;
+  name: string;
+  inviteCode: string;
+}
+
+export default function CreateColocationPage() {
+  const router = useRouter();
+  const { accessToken } = useAuth();
+
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [created, setCreated] = useState<CreateColocationResponse | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      console.log("accessToken au moment du submit :", accessToken);
+      const res = await apiFetch("/api/colocations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Impossible de créer la colocation.");
+      } else {
+        setCreated(data);
+      }
+    } catch {
+      setError("Une erreur est survenue. Vérifiez votre connexion.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!created) return;
+    await navigator.clipboard.writeText(created.inviteCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        a { text-decoration: none; color: inherit; }
+
+        body {
+          font-family: 'DM Sans', sans-serif;
+          background: #3d6124;
+          background-image:
+            radial-gradient(ellipse at 15% 0%,  rgba(142,196,80,.16) 0%, transparent 50%),
+            radial-gradient(ellipse at 85% 100%, rgba(20,40,10,.30)   0%, transparent 50%);
+          color: #fff;
+          min-height: 100vh;
+        }
+
+        .btn-outline {
+          border-radius: 999px;
+          border: 2px solid rgba(255,255,255,.7);
+          background: transparent;
+          color: #fff;
+          padding: 11px 32px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: .82rem;
+          font-weight: 700;
+          letter-spacing: .1em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background .18s, color .18s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .btn-outline:hover { background: #fff; color: #3d6124; }
+
+        .btn-solid {
+          border-radius: 999px;
+          border: 2px solid #fff;
+          background: #fff;
+          color: #3d6124;
+          padding: 11px 32px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: .82rem;
+          font-weight: 700;
+          letter-spacing: .1em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background .18s, border-color .18s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+        }
+        .btn-solid:hover:not(:disabled) { background: #e8f3df; border-color: #e8f3df; }
+        .btn-solid:disabled { opacity: .6; cursor: not-allowed; }
+        .btn-sm { padding: 7px 20px; font-size: .75rem; width: auto; }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .anim-1 { animation: fadeUp .4s 0.05s ease both; }
+        .anim-2 { animation: fadeUp .4s 0.12s ease both; }
+        .anim-3 { animation: fadeUp .4s 0.20s ease both; }
+
+        .shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+        .top-nav {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 20px 40px;
+        }
+        .top-nav__brand {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 1.5rem;
+          letter-spacing: .2em;
+        }
+
+        .center {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 32px 24px 64px;
+        }
+
+        .card {
+          background: rgba(255,255,255,.1);
+          backdrop-filter: blur(12px);
+          border-radius: 24px;
+          padding: 40px 36px;
+          width: 100%;
+          max-width: 420px;
+          border: 1px solid rgba(255,255,255,.15);
+        }
+
+        .card__eyebrow {
+          color: rgba(255,255,255,.45);
+          font-size: .7rem;
+          font-weight: 600;
+          letter-spacing: .35em;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+        .card__title {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 2.8rem;
+          letter-spacing: .08em;
+          line-height: 1;
+          margin-bottom: 6px;
+        }
+        .card__sub {
+          color: rgba(255,255,255,.55);
+          font-size: .88rem;
+          font-weight: 300;
+          margin-bottom: 32px;
+          line-height: 1.6;
+        }
+
+        .form-field { margin-bottom: 20px; }
+        .form-field label {
+          display: block;
+          font-size: .78rem;
+          font-weight: 600;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,.7);
+          margin-bottom: 8px;
+        }
+        .form-field input {
+          width: 100%;
+          background: rgba(255,255,255,.12);
+          border: 1.5px solid rgba(255,255,255,.2);
+          border-radius: 12px;
+          padding: 13px 16px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: .95rem;
+          color: #fff;
+          outline: none;
+          transition: border-color .18s, background .18s;
+        }
+        .form-field input:focus {
+          border-color: rgba(255,255,255,.6);
+          background: rgba(255,255,255,.18);
+        }
+        .form-field input::placeholder { color: rgba(255,255,255,.35); }
+
+        .form-hint {
+          margin-top: 6px;
+          font-size: .75rem;
+          color: rgba(255,255,255,.4);
+          line-height: 1.5;
+        }
+
+        .form-error {
+          background: rgba(220,60,60,.25);
+          border: 1px solid rgba(220,60,60,.4);
+          border-radius: 10px;
+          padding: 10px 14px;
+          font-size: .83rem;
+          color: #ffb3b3;
+          margin-bottom: 20px;
+        }
+
+        /* ── Success state ── */
+        .success-icon {
+          font-size: 2.4rem;
+          margin-bottom: 16px;
+          line-height: 1;
+        }
+
+        .invite-block {
+          background: rgba(255,255,255,.08);
+          border: 1.5px solid rgba(255,255,255,.2);
+          border-radius: 16px;
+          padding: 20px;
+          margin: 24px 0;
+          text-align: center;
+        }
+        .invite-block__label {
+          font-size: .7rem;
+          font-weight: 600;
+          letter-spacing: .3em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,.45);
+          margin-bottom: 10px;
+        }
+        .invite-block__code {
+          font-family: 'Bebas Neue', sans-serif;
+          font-size: 2.6rem;
+          letter-spacing: .35em;
+          color: #fff;
+          margin-bottom: 14px;
+          line-height: 1;
+        }
+        .btn-copy {
+          border-radius: 999px;
+          border: 1.5px solid rgba(255,255,255,.5);
+          background: transparent;
+          color: rgba(255,255,255,.85);
+          padding: 8px 22px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: .75rem;
+          font-weight: 600;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background .18s, color .18s;
+        }
+        .btn-copy:hover, .btn-copy--copied { background: rgba(142,196,80,.25); border-color: #8ec450; color: #8ec450; }
+
+        .back-link {
+          text-align: center;
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid rgba(255,255,255,.12);
+          font-size: .82rem;
+          color: rgba(255,255,255,.45);
+        }
+        .back-link a { color: #fff; font-weight: 600; text-decoration: underline; }
+
+        @media (max-width: 480px) {
+          .top-nav { padding: 16px 20px; }
+          .card { padding: 28px 20px; }
+        }
+      `}</style>
+
+      <div className="shell">
+        <nav className="top-nav anim-1">
+          <Link href="/" className="top-nav__brand">
+            <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
+              <path d="M4 15L16 5L28 15V28H21V21H11V28H4V15Z" stroke="white" strokeWidth="2" fill="rgba(255,255,255,.12)" />
+              <line x1="10" y1="12" x2="22" y2="12" stroke="white" strokeWidth="1.5" />
+            </svg>
+            CLEAN&apos; COLOC
+          </Link>
+          <div>
+            <Link href="/colocation" className="btn-outline btn-sm">← Retour</Link>
+          </div>
+        </nav>
+
+        <main className="center">
+          {!created ? (
+            /* ── Formulaire ── */
+            <div className="card anim-2">
+              <p className="card__eyebrow">Nouvel espace</p>
+              <h1 className="card__title">Créer une colocation</h1>
+              <p className="card__sub">
+                Donnez un nom à votre colocation. Un code d&apos;invitation sera généré automatiquement pour inviter vos colocataires.
+              </p>
+
+              <form onSubmit={handleSubmit} className="anim-3">
+                <div className="form-field">
+                  <label htmlFor="name">Nom de la colocation</label>
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="Ex : Appart des Pins, Coloc St-Michel…"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    maxLength={80}
+                    required
+                  />
+                  <p className="form-hint">Entre 2 et 80 caractères.</p>
+                </div>
+
+                {error && <div className="form-error">{error}</div>}
+
+                <button type="submit" className="btn-solid" disabled={loading || name.trim().length < 2}>
+                  {loading ? "Création en cours…" : "Créer ma colocation →"}
+                </button>
+              </form>
+            </div>
+          ) : (
+            /* ── Succès ── */
+            <div className="card anim-2">
+              <div className="success-icon">🎉</div>
+              <p className="card__eyebrow">Colocation créée</p>
+              <h1 className="card__title">{created.name}</h1>
+              <p className="card__sub">
+                Partagez ce code avec vos colocataires pour qu&apos;ils puissent rejoindre votre espace.
+              </p>
+
+              <div className="invite-block">
+                <p className="invite-block__label">Code d&apos;invitation</p>
+                <p className="invite-block__code">{created.inviteCode}</p>
+                <button
+                  onClick={handleCopy}
+                  className={`btn-copy${copied ? " btn-copy--copied" : ""}`}
+                >
+                  {copied ? "✓ Copié !" : "Copier le code"}
+                </button>
+              </div>
+
+              <button
+                className="btn-solid"
+                onClick={() => router.push("/dashboard")}
+              >
+                Accéder à mon espace →
+              </button>
+
+              <div className="back-link">
+                <a onClick={() => { setCreated(null); setName(""); }} style={{ cursor: "pointer" }}>
+                  Créer une autre colocation
+                </a>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </>
+  );
+}

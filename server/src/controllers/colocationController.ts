@@ -25,6 +25,12 @@ export const createColocation = async (
       res.status(400).json({ message: 'Le nom de la colocation est requis.' });
       return;
     }
+    
+    const existingMembership = await Membership.findOne({ where: { userId } });
+    if (existingMembership) {
+    res.status(409).json({ message: 'Vous appartenez déjà à une colocation.' });
+    return;
+    }
 
     let inviteCode = generateInviteCode();
     let codeExists = await Colocation.findOne({ where: { inviteCode } });
