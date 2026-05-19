@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -42,14 +43,12 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/api/users/register", {
+      const res = await apiFetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          prenom_user: firstName, 
-          nom_user: lastName, 
-          mail_user: email, 
-          password_user: password 
+        body: JSON.stringify({
+          username: `${firstName.trim()} ${lastName.trim()}`,
+          email,
+          password,
         }),
       });
 
@@ -61,7 +60,7 @@ export default function RegisterPage() {
         router.push("/login");
       }
     } catch {
-      setError("Une erreur est survenue. Vérifiez que le serveur est lancé sur le port 3001.");
+      setError("Impossible de joindre le serveur.");
     } finally {
       setLoading(false);
     }
@@ -70,8 +69,6 @@ export default function RegisterPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         a { text-decoration: none; color: inherit; }
 
@@ -134,11 +131,7 @@ export default function RegisterPage() {
         .anim-2 { animation: fadeUp .4s 0.12s ease both; }
         .anim-3 { animation: fadeUp .4s 0.20s ease both; }
 
-        .register-shell {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
+        .register-shell { min-height: 100vh; display: flex; flex-direction: column; }
 
         .top-nav {
           display: flex;
@@ -154,7 +147,6 @@ export default function RegisterPage() {
           font-size: 1.5rem;
           letter-spacing: .2em;
         }
-        .top-nav__actions { display: flex; gap: 12px; }
 
         .register-center {
           flex: 1;
@@ -196,15 +188,9 @@ export default function RegisterPage() {
           margin-bottom: 28px;
         }
 
-        .form-row-2 {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 14px;
-        }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-        .form-field {
-          margin-bottom: 16px;
-        }
+        .form-field { margin-bottom: 16px; }
         .form-field label {
           display: block;
           font-size: .78rem;
@@ -230,12 +216,9 @@ export default function RegisterPage() {
           border-color: rgba(255,255,255,.6);
           background: rgba(255,255,255,.18);
         }
+        .form-field input::placeholder { color: rgba(255,255,255,.35); }
 
-        .strength-bars {
-          display: flex;
-          gap: 4px;
-          margin-top: 6px;
-        }
+        .strength-bars { display: flex; gap: 4px; margin-top: 6px; }
         .strength-bar {
           flex: 1;
           height: 3px;
@@ -259,16 +242,8 @@ export default function RegisterPage() {
           flex-shrink: 0;
           cursor: pointer;
         }
-        .terms-row span {
-          font-size: .82rem;
-          color: rgba(255,255,255,.6);
-          line-height: 1.5;
-        }
-        .terms-row a {
-          color: #fff;
-          text-decoration: underline;
-          text-underline-offset: 3px;
-        }
+        .terms-row span { font-size: .82rem; color: rgba(255,255,255,.6); line-height: 1.5; }
+        .terms-row a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 
         .form-error {
           background: rgba(220,60,60,.25);
@@ -288,11 +263,7 @@ export default function RegisterPage() {
           padding-top: 20px;
           border-top: 1px solid rgba(255,255,255,.12);
         }
-        .login-prompt a {
-          color: #fff;
-          font-weight: 600;
-          text-decoration: underline;
-        }
+        .login-prompt a { color: #fff; font-weight: 600; text-decoration: underline; }
 
         @media (max-width: 480px) {
           .register-card { padding: 28px 20px; }
@@ -309,7 +280,7 @@ export default function RegisterPage() {
             </svg>
             CLEAN&apos; COLOC
           </Link>
-          <div className="top-nav__actions">
+          <div>
             <Link href="/login" className="btn-outline btn-sm">Se connecter</Link>
           </div>
         </nav>
@@ -350,7 +321,7 @@ export default function RegisterPage() {
               </div>
               <div className="terms-row">
                 <input type="checkbox" id="terms" checked={terms} onChange={(e) => setTerms(e.target.checked)} />
-                <span>J&apos;accepte les <Link href="/terms">conditions</Link></span>
+                <span>J&apos;accepte les <Link href="/terms">conditions d&apos;utilisation</Link></span>
               </div>
 
               {error && <div className="form-error">{error}</div>}

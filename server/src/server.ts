@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser';
 import userRoutes from './routes/userRoutes';
 import taskRoutes from './routes/taskRoutes';
 import colocationRoutes from './routes/colocationRoutes';
+import authRoutes from './routes/authRoutes'
 
 const startServer = async () => {
     await initDatabase();
@@ -43,6 +44,7 @@ const startServer = async () => {
     app.use('/api/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     // Routes
+    app.use('/api/auth', authRoutes);
     app.use('/api/users', userRoutes);
     app.use('/api/tasks', taskRoutes);
     app.use('/api/colocations', colocationRoutes);

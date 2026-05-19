@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,13 +21,10 @@ export default function LoginPage() {
 
     try {
       // MODIFICATION : Port 3001 et noms des colonnes mail_user / password_user
-      const res = await fetch("http://localhost:3001/api/users/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          mail_user: email, 
-          password_user: password 
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
@@ -32,7 +32,7 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.message || "Email ou mot de passe incorrect.");
       } else {
-        if(data.accessToken) localStorage.setItem('token', data.accessToken);
+        login(data.user, data.accessToken);
         router.push("/dashboard");
       }
     } catch {
