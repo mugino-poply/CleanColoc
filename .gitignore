@@ -11,6 +11,7 @@ server/ATT87627.env
 
 # Build
 dist/
+server/dist/
 .next/
 client/dist/
 
@@ -28,3 +29,6 @@ server/config/config.json
 
 .next/
 client/out/
+
+!server/.env.example
+!client/.env.example
