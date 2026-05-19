@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import Task from '../models/Task';
 
-// GET /api/tasks
 export const getAllTasks = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { colocationId } = req.query;
@@ -15,10 +14,10 @@ export const getAllTasks = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// GET /api/tasks/:id
 export const getTaskById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(req.params.id, {
+    const id = req.params['id'] as string;
+    const task = await Task.findByPk(id, {
       attributes: ['id', 'title', 'description', 'status', 'assignedTo', 'colocationId', 'isRecurring', 'recurringInterval', 'dueDate', 'createdAt', 'updatedAt'],
     });
     if (!task) {
@@ -31,7 +30,6 @@ export const getTaskById = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// POST /api/tasks
 export const createTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { title, description, colocationId, assignedTo, isRecurring, recurringInterval, dueDate } = req.body;
@@ -55,10 +53,10 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-// PUT /api/tasks/:id
 export const updateTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(req.params.id);
+    const id = req.params['id'] as string;
+    const task = await Task.findByPk(id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
@@ -70,10 +68,10 @@ export const updateTask = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-// PATCH /api/tasks/:id/assign
 export const assignTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(req.params.id);
+    const id = req.params['id'] as string;
+    const task = await Task.findByPk(id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
@@ -90,10 +88,10 @@ export const assignTask = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-// PATCH /api/tasks/:id/complete
 export const completeTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(req.params.id);
+    const id = req.params['id'] as string;
+    const task = await Task.findByPk(id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;
@@ -105,10 +103,10 @@ export const completeTask = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-// DELETE /api/tasks/:id
 export const deleteTask = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const task = await Task.findByPk(req.params.id);
+    const id = req.params['id'] as string;
+    const task = await Task.findByPk(id);
     if (!task) {
       res.status(404).json({ message: 'Tâche introuvable.' });
       return;

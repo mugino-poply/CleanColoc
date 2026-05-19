@@ -7,7 +7,7 @@ export const checkIdParam = (
   res: Response,
   next: NextFunction
 ): void => {
-  const id = req.params.id;
+  const id = req.params['id'] as string | undefined;
 
   if (!id) {
     res.status(400).json({ error: 'ID manquant.' });

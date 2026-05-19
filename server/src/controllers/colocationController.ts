@@ -7,7 +7,6 @@ const generateInviteCode = (): string => {
   return randomBytes(4).toString('hex').toUpperCase();
 };
 
-// POST /api/colocations
 export const createColocation = async (
   req: Request,
   res: Response,
@@ -16,6 +15,11 @@ export const createColocation = async (
   try {
     const { name, description } = req.body;
     const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Non authentifié.' });
+      return;
+    }
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       res.status(400).json({ message: 'Le nom de la colocation est requis.' });
@@ -47,7 +51,6 @@ export const createColocation = async (
   }
 };
 
-// POST /api/colocations/join
 export const joinColocation = async (
   req: Request,
   res: Response,
@@ -57,8 +60,13 @@ export const joinColocation = async (
     const { inviteCode } = req.body;
     const userId = req.user?.id;
 
+    if (!userId) {
+      res.status(401).json({ message: 'Non authentifié.' });
+      return;
+    }
+
     if (!inviteCode || typeof inviteCode !== 'string' || inviteCode.trim() === '') {
-      res.status(400).json({ message: 'Le code d\'invitation est requis.' });
+      res.status(400).json({ message: "Le code d'invitation est requis." });
       return;
     }
 
@@ -73,7 +81,7 @@ export const joinColocation = async (
     });
 
     if (!colocation) {
-      res.status(404).json({ message: 'Code d\'invitation invalide.' });
+      res.status(404).json({ message: "Code d'invitation invalide." });
       return;
     }
 

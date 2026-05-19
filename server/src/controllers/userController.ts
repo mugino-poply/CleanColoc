@@ -43,12 +43,12 @@ export class UserController {
 
   static async getProfile(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.params.id;
+      const userId = req.params['id'] as string;
       const user = await UserService.getUserById(userId);
       res.status(200).json({ data: user });
     } catch (error) {
       next(error);
-    }
+      }
   }
 
   static async logout(req: Request, res: Response, next: NextFunction) {
