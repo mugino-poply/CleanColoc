@@ -22,5 +22,5 @@ jobs:
             git pull origin main
             cd client
             npm install
-            NEXT_PUBLIC_API_URL=https://cleancoloc.ddns.net/api npm run build
+            NEXT_PUBLIC_API_URL=https://cleancoloc.ddns.net npm run build
             pm2 restart cleancoloc
