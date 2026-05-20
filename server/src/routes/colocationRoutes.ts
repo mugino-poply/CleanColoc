@@ -3,6 +3,7 @@ import { authenticateToken } from '../middlewares/authMiddleware';
 import {
   createColocation,
   joinColocation,
+  getMyColocation,
 } from '../controllers/colocationController';
 
 const router = Router();
@@ -75,5 +76,35 @@ router.post('/', authenticateToken, createColocation);
  *         description: Erreur serveur
  */
 router.post('/join', authenticateToken, joinColocation);
+
+/**
+ * @swagger
+ * /api/colocations/me:
+ *   get:
+ *     summary: Retourne la colocation de l'utilisateur connecté
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Colocation et rôle de l'utilisateur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 colocation:
+ *                   type: object
+ *                 role:
+ *                   type: string
+ *                   enum: [admin, member]
+ *       401:
+ *         description: Non authentifié
+ *       404:
+ *         description: L'utilisateur n'appartient à aucune colocation
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/me', authenticateToken, getMyColocation);
 
 export default router;

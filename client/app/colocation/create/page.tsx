@@ -28,7 +28,6 @@ export default function CreateColocationPage() {
     setLoading(true);
 
     try {
-      console.log("accessToken au moment du submit :", accessToken);
       const res = await apiFetch("/api/colocations", {
         method: "POST",
         headers: {
@@ -276,16 +275,6 @@ export default function CreateColocationPage() {
         }
         .btn-copy:hover, .btn-copy--copied { background: rgba(142,196,80,.25); border-color: #8ec450; color: #8ec450; }
 
-        .back-link {
-          text-align: center;
-          margin-top: 20px;
-          padding-top: 20px;
-          border-top: 1px solid rgba(255,255,255,.12);
-          font-size: .82rem;
-          color: rgba(255,255,255,.45);
-        }
-        .back-link a { color: #fff; font-weight: 600; text-decoration: underline; }
-
         @media (max-width: 480px) {
           .top-nav { padding: 16px 20px; }
           .card { padding: 28px 20px; }
@@ -361,16 +350,11 @@ export default function CreateColocationPage() {
 
               <button
                 className="btn-solid"
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push(`/colocation/${created.id}`)}
               >
                 Accéder à mon espace →
               </button>
 
-              <div className="back-link">
-                <a onClick={() => { setCreated(null); setName(""); }} style={{ cursor: "pointer" }}>
-                  Créer une autre colocation
-                </a>
-              </div>
             </div>
           )}
         </main>

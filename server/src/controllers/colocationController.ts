@@ -102,3 +102,34 @@ export const joinColocation = async (
     next(error);
   }
 };
+
+export const getMyColocation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const membership = await Membership.findOne({
+      where: { userId },
+      include: [{ model: Colocation, as: 'colocation' }],
+    });
+
+    if (!membership) {
+      res.status(404).json({ error: 'No colocation found for this user' });
+      return;
+    }
+
+    res.status(200).json({
+      colocation: (membership as any).colocation,
+      role: membership.role,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

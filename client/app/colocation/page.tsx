@@ -1,6 +1,37 @@
-import Link from "next/link";
+'use client';
 
-export default function ColocationPage() {
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiFetchAuth } from '@/lib/api';
+
+export default function ColocationChoicePage() {
+  const router = useRouter();
+  const { accessToken } = useAuth();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    if (!accessToken) {
+      router.push('/login');
+      return;
+    }
+
+    apiFetchAuth('/api/colocations/me', accessToken)
+      .then((res) => {
+        if (res.ok) {
+          return res.json().then((data) => {
+            router.push(`/colocation/${data.colocation.id}`);
+          });
+        }
+        // 404 = pas de coloc → on affiche la page normalement
+        setChecking(false);
+      })
+      .catch(() => setChecking(false));
+  }, [accessToken]);
+
+  if (checking) return null;
+
   return (
     <>
       <style>{`
@@ -201,9 +232,6 @@ export default function ColocationPage() {
             </svg>
             CLEAN&apos; COLOC
           </Link>
-          <div>
-            <Link href="/dashboard" className="btn-outline btn-sm">Mon espace</Link>
-          </div>
         </nav>
 
         <main className="center">

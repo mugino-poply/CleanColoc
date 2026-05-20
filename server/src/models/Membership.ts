@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
+import Colocation from './Colocation';
 
 interface MembershipAttributes {
   id: string;
@@ -21,6 +22,9 @@ class Membership extends Model<MembershipAttributes, MembershipCreationAttribute
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Propriété peuplée par Sequelize lors d'un include
+  public colocation?: Colocation;
 }
 
 Membership.init(
@@ -52,5 +56,10 @@ Membership.init(
     paranoid: true,
   }
 );
+
+Membership.belongsTo(Colocation, {
+  foreignKey: 'colocationId',
+  as: 'colocation',
+});
 
 export default Membership;
