@@ -36,7 +36,7 @@ export default function LoginPage() {
         router.push("/colocation"); // au lieu de /dashboard
       }
     } catch {
-      setError("Une erreur est survenue. Vérifiez que le serveur tourne sur le port 3001.");
+      setError("Une erreur est survenue. Vérifiez votre connexion.");
     } finally {
       setLoading(false);
     }
