@@ -5,12 +5,14 @@ interface TaskAttributes {
   id: string;
   title: string;
   description?: string;
-  status: 'pending' | 'in_progress' | 'done';
+  status: 'à faire' | 'terminée';
   assignedTo?: string;
   colocationId: string;
   isRecurring: boolean;
   recurringInterval?: string;
   dueDate?: Date;
+  completedAt?: Date;
+  completedBy?: string;
   deletedAt?: Date;
 }
 
@@ -21,12 +23,14 @@ class Task extends Model<TaskAttributes, TaskCreationAttributes>
   public id!: string;
   public title!: string;
   public description?: string;
-  public status!: 'pending' | 'in_progress' | 'done';
+  public status!: 'à faire' | 'terminée';
   public assignedTo?: string;
   public colocationId!: string;
   public isRecurring!: boolean;
   public recurringInterval?: string;
   public dueDate?: Date;
+  public completedAt?: Date;
+  public completedBy?: string;
   public deletedAt?: Date;
 
   public readonly createdAt!: Date;
@@ -50,9 +54,9 @@ Task.init(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM('pending', 'in_progress', 'done'),
+      type: DataTypes.ENUM('à faire', 'terminée'),
       allowNull: false,
-      defaultValue: 'pending',
+      defaultValue: 'à faire',
     },
     assignedTo: {
       type: DataTypes.UUID,
@@ -73,6 +77,14 @@ Task.init(
     },
     dueDate: {
       type: DataTypes.DATE,
+      allowNull: true,
+    },
+    completedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    completedBy: {
+      type: DataTypes.UUID,
       allowNull: true,
     },
   },
