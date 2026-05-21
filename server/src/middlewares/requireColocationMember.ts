@@ -38,9 +38,7 @@ export const requireColocationMember = async (
         res.status(400).json({ message: 'ID de tâche manquant.' });
         return;
       }
-      const task = await Task.findByPk(taskId, {
-        attributes: ['id', 'colocationId'],
-      });
+      const task = await Task.findByPk(taskId)
       if (!task) {
         res.status(404).json({ message: 'Tâche introuvable.' });
         return;
