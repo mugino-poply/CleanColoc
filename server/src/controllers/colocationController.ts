@@ -117,7 +117,11 @@ export const getMyColocation = async (
 
     const membership = await Membership.findOne({
       where: { userId },
-      include: [{ model: Colocation, as: 'colocation' }],
+      include: [{
+        model: Colocation,
+        as: 'colocation',
+        attributes: ['id', 'name', 'description', 'inviteCode', 'createdAt'],
+      }],    
     });
 
     if (!membership) {
@@ -129,6 +133,41 @@ export const getMyColocation = async (
       colocation: (membership as any).colocation,
       role: membership.role,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getColocationById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const id = req.params['id'] as string;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Non authentifié.' });
+      return;
+    }
+
+    const membership = await Membership.findOne({ where: { userId, colocationId: id } });
+    if (!membership) {
+      res.status(403).json({ message: 'Accès interdit.' });
+      return;
+    }
+
+    const colocation = await Colocation.findByPk(id, {
+      attributes: ['id', 'name', 'description', 'inviteCode', 'createdAt'],
+    });
+
+    if (!colocation) {
+      res.status(404).json({ message: 'Colocation introuvable.' });
+      return;
+    }
+
+    res.status(200).json(colocation);
   } catch (error) {
     next(error);
   }

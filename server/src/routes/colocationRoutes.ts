@@ -4,6 +4,7 @@ import {
   createColocation,
   joinColocation,
   getMyColocation,
+  getColocationById
 } from '../controllers/colocationController';
 
 const router = Router();
@@ -106,5 +107,34 @@ router.post('/join', authenticateToken, joinColocation);
  *         description: Erreur serveur
  */
 router.get('/me', authenticateToken, getMyColocation);
+
+/**
+ * @swagger
+ * /api/colocations/{id}:
+ *   get:
+ *     summary: Retourne le détail d'une colocation
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Détail de la colocation
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès interdit
+ *       404:
+ *         description: Colocation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/:id', authenticateToken, getColocationById);
 
 export default router;
