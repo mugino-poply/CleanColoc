@@ -64,8 +64,10 @@ router.post('/register', UserController.register);
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: test@test.com
  *               password:
  *                 type: string
+ *                 example: test1234
  *     responses:
  *       200:
  *         description: Connexion réussie
