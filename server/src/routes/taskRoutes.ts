@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { checkIdParam } from '../middlewares/checkIdParam';
+import { authenticateToken } from '../middlewares/authMiddleware';
+import { requireColocationMember } from '../middlewares/requireColocationMember';
 import {
-  getAllTasks,
-  getTaskById,
-  createTask,
   updateTask,
   assignTask,
   completeTask,
@@ -16,102 +15,17 @@ const router = Router();
  * @swagger
  * tags:
  *   name: Tasks
- *   description: Gestion des tâches ménagères
+ *   description: Gestion des tâches ménagères d'une colocation
  */
-
-/**
- * @swagger
- * /api/tasks:
- *   get:
- *     summary: Récupérer toutes les tâches
- *     tags: [Tasks]
- *     parameters:
- *       - in: query
- *         name: colocationId
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Filtrer par colocation
- *     responses:
- *       200:
- *         description: Liste des tâches
- *       500:
- *         description: Erreur serveur
- */
-router.get('/', getAllTasks);
 
 /**
  * @swagger
  * /api/tasks/{id}:
- *   get:
- *     summary: Récupérer une tâche par son ID
+ *   patch:
+ *     summary: Modifier une tâche (titre, description, date d'échéance)
  *     tags: [Tasks]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: La tâche
- *       404:
- *         description: Tâche introuvable
- *       500:
- *         description: Erreur serveur
- */
-router.get('/:id', checkIdParam, getTaskById);
-
-/**
- * @swagger
- * /api/tasks:
- *   post:
- *     summary: Créer une nouvelle tâche
- *     tags: [Tasks]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - colocationId
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               colocationId:
- *                 type: string
- *                 format: uuid
- *               assignedTo:
- *                 type: string
- *                 format: uuid
- *               isRecurring:
- *                 type: boolean
- *               recurringInterval:
- *                 type: string
- *               dueDate:
- *                 type: string
- *                 format: date-time
- *     responses:
- *       201:
- *         description: Tâche créée
- *       400:
- *         description: Champs obligatoires manquants
- *       500:
- *         description: Erreur serveur
- */
-router.post('/', createTask);
-
-/**
- * @swagger
- * /api/tasks/{id}:
- *   put:
- *     summary: Modifier une tâche
- *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -130,35 +44,41 @@ router.post('/', createTask);
  *                 type: string
  *               description:
  *                 type: string
- *               status:
- *                 type: string
- *                 enum: [pending, in_progress, done]
- *               assignedTo:
- *                 type: string
- *                 format: uuid
- *               isRecurring:
- *                 type: boolean
- *               recurringInterval:
- *                 type: string
+ *                 nullable: true
  *               dueDate:
  *                 type: string
  *                 format: date-time
+ *                 nullable: true
  *     responses:
  *       200:
  *         description: Tâche mise à jour
+ *       400:
+ *         description: Champs invalides
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
  *       404:
  *         description: Tâche introuvable
  *       500:
  *         description: Erreur serveur
  */
-router.put('/:id', checkIdParam, updateTask);
+router.patch(
+  '/:id',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  updateTask
+);
 
 /**
  * @swagger
  * /api/tasks/{id}/assign:
  *   patch:
- *     summary: Assigner une tâche à un membre
+ *     summary: Assigner ou désassigner une tâche à un membre de la colocation
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -178,24 +98,38 @@ router.put('/:id', checkIdParam, updateTask);
  *               assignedTo:
  *                 type: string
  *                 format: uuid
+ *                 nullable: true
+ *                 description: UUID d'un membre de la colocation, ou null pour désassigner
  *     responses:
  *       200:
- *         description: Tâche assignée
+ *         description: Tâche assignée ou désassignée
  *       400:
- *         description: Champ assignedTo manquant
+ *         description: Champ assignedTo manquant, mal formé, ou utilisateur non membre
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
  *       404:
  *         description: Tâche introuvable
  *       500:
  *         description: Erreur serveur
  */
-router.patch('/:id/assign', checkIdParam, assignTask);
+router.patch(
+  '/:id/assign',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  assignTask
+);
 
 /**
  * @swagger
  * /api/tasks/{id}/complete:
  *   patch:
- *     summary: Marquer une tâche comme terminée
+ *     summary: Basculer le statut d'une tâche entre 'à faire' et 'terminée'
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -205,20 +139,34 @@ router.patch('/:id/assign', checkIdParam, assignTask);
  *           format: uuid
  *     responses:
  *       200:
- *         description: Tâche marquée comme terminée
+ *         description: Statut basculé
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
  *       404:
  *         description: Tâche introuvable
+ *       409:
+ *         description: Conflit — un autre membre a déjà modifié le statut
  *       500:
  *         description: Erreur serveur
  */
-router.patch('/:id/complete', checkIdParam, completeTask);
+router.patch(
+  '/:id/complete',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  completeTask
+);
 
 /**
  * @swagger
  * /api/tasks/{id}:
  *   delete:
- *     summary: Supprimer une tâche
+ *     summary: Supprimer une tâche (soft delete)
  *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -229,11 +177,21 @@ router.patch('/:id/complete', checkIdParam, completeTask);
  *     responses:
  *       204:
  *         description: Tâche supprimée
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
  *       404:
  *         description: Tâche introuvable
  *       500:
  *         description: Erreur serveur
  */
-router.delete('/:id', checkIdParam, deleteTask);
+router.delete(
+  '/:id',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  deleteTask
+);
 
 export default router;

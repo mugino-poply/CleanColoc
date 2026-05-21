@@ -6,6 +6,12 @@ import {
   getMyColocation,
   getColocationById
 } from '../controllers/colocationController';
+import { checkIdParam } from '../middlewares/checkIdParam';
+import { requireColocationMember } from '../middlewares/requireColocationMember';
+import {
+  getColocationTasks,
+  createTaskInColocation,
+} from '../controllers/taskController';
 
 const router = Router();
 
@@ -136,5 +142,107 @@ router.get('/me', authenticateToken, getMyColocation);
  *         description: Erreur serveur
  */
 router.get('/:id', authenticateToken, getColocationById);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/tasks:
+ *   get:
+ *     summary: Liste les tâches de la colocation (avec filtres optionnels)
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: ['à faire', 'terminée']
+ *         description: Filtrer par statut
+ *       - in: query
+ *         name: assignedTo
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filtrer par membre assigné
+ *     responses:
+ *       200:
+ *         description: Liste des tâches
+ *       400:
+ *         description: Filtre invalide
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get(
+  '/:id/tasks',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  getColocationTasks
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/tasks:
+ *   post:
+ *     summary: Créer une tâche dans la colocation
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               dueDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Optionnelle, doit être dans le futur si fournie
+ *     responses:
+ *       201:
+ *         description: Tâche créée
+ *       400:
+ *         description: Champs invalides
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post(
+  '/:id/tasks',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  createTaskInColocation
+);
+
 
 export default router;
