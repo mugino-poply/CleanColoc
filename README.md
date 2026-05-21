@@ -73,7 +73,7 @@ npm run dev
 | Service | URL |
 |---|---|
 | Backend | http://localhost:3000 |
-| Frontend | http://localhost:3001 |
+| Frontend | http://localhost:3002 |
 | Swagger | http://localhost:3000/api-docs |
 
 ---
