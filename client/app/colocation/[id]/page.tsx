@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
 import { apiFetch } from '../../../lib/api';
 
@@ -219,7 +220,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
               const href = card.href || `/colocation/${id}${card.suffix ?? ''}`;
               const animClass = `nav-card anim-${i + 3}`;
               return (
-                <a key={card.title} className={animClass} href={href}>
+                <Link key={card.title} className={animClass} href={href}>
                   <span style={{ fontSize: '2rem' }}>{card.icon}</span>
                   <span
                     style={{
@@ -240,7 +241,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
                   >
                     {card.description}
                   </span>
-                </a>
+                </Link>
               );
             })}
           </div>
