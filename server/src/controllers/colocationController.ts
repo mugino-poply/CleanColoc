@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import Colocation from '../models/Colocation';
 import Membership from '../models/Membership';
 import { randomBytes } from 'crypto';
+import User from '../models/user';
 
 const generateInviteCode = (): string => {
   return randomBytes(4).toString('hex').toUpperCase();
@@ -168,6 +169,45 @@ export const getColocationById = async (
     }
 
     res.status(200).json(colocation);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getColocationMembers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const colocationId = req.params.id;
+
+    const memberships = await Membership.findAll({
+      where: { colocationId },
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'username', 'avatarUrl'],
+        },
+      ],
+    });
+
+    const members = memberships
+      .map((m) => ({
+        membershipId: m.id,
+        userId: (m as any).User.id,
+        username: (m as any).User.username,
+        avatarUrl: (m as any).User.avatarUrl ?? null,
+        role: m.role,
+        joinedAt: m.createdAt,
+      }))
+      .sort((a, b) => {
+        if (a.role === 'admin' && b.role !== 'admin') return -1;
+        if (a.role !== 'admin' && b.role === 'admin') return 1;
+        return a.username.localeCompare(b.username);
+      });
+
+    res.status(200).json(members);
   } catch (error) {
     next(error);
   }

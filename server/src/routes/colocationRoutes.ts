@@ -4,7 +4,8 @@ import {
   createColocation,
   joinColocation,
   getMyColocation,
-  getColocationById
+  getColocationById,
+  getColocationMembers
 } from '../controllers/colocationController';
 import { checkIdParam } from '../middlewares/checkIdParam';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
@@ -242,6 +243,64 @@ router.post(
   checkIdParam,
   requireColocationMember,
   createTaskInColocation
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/members:
+ *   get:
+ *     summary: Liste les membres d'une colocation
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID de la colocation
+ *     responses:
+ *       200:
+ *         description: Liste des membres
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   membershipId:
+ *                     type: string
+ *                     format: uuid
+ *                   userId:
+ *                     type: string
+ *                     format: uuid
+ *                   username:
+ *                     type: string
+ *                   avatarUrl:
+ *                     type: string
+ *                     nullable: true
+ *                   role:
+ *                     type: string
+ *                     enum: [admin, member]
+ *                   joinedAt:
+ *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       404:
+ *         description: Colocation introuvable
+ */
+router.get(
+  '/:id/members',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  getColocationMembers
 );
 
 
