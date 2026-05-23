@@ -42,8 +42,6 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const authHeaders = { Authorization: `Bearer ${accessToken}` };
-
   const fetchTasks = () => {
     const qs = new URLSearchParams();
     if (filterStatus) qs.set('status', filterStatus);
@@ -51,7 +49,9 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     const query = qs.toString() ? `?${qs.toString()}` : '';
 
     setLoading(true);
-    apiFetch(`/api/colocations/${id}/tasks${query}`, { headers: authHeaders })
+    apiFetch(`/api/colocations/${id}/tasks${query}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         return res.json();
@@ -62,21 +62,23 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   };
 
   useEffect(() => {
-    if (!isAuthenticated) { router.push('/login'); return; }
-    apiFetch(`/api/colocations/${id}/members`, { headers: authHeaders })
+    if (!isAuthenticated || !accessToken) return;
+    apiFetch(`/api/colocations/${id}/members`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
       .then((res) => res.json())
       .then((data: Member[]) => setMembers(data));
-  }, [id]);
+  }, [id, accessToken]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !accessToken) return;
     fetchTasks();
-  }, [id, filterStatus, filterAssignedTo]);
+  }, [id, filterStatus, filterAssignedTo, accessToken]);
 
   const handleComplete = async (task: Task) => {
     await apiFetch(`/api/tasks/${task.id}/complete`, {
       method: 'PATCH',
-      headers: authHeaders,
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     fetchTasks();
   };
@@ -85,7 +87,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     if (!window.confirm(`Supprimer la tâche "${task.title}" ?`)) return;
     await apiFetch(`/api/tasks/${task.id}`, {
       method: 'DELETE',
-      headers: authHeaders,
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     fetchTasks();
   };
@@ -96,7 +98,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     dueDate: string;
     assignedTo: string | null;
   }) => {
-    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
+    const jsonHeaders = {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    };
 
     if (editingTask) {
       await apiFetch(`/api/tasks/${editingTask.id}`, {

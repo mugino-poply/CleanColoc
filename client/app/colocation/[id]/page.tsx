@@ -58,6 +58,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
   const [colocation, setColocation] = useState<Colocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  console.log('API BASE:', process.env.NEXT_PUBLIC_API_URL); 
 
   useEffect(() => {
     if (!isAuthenticated) {
