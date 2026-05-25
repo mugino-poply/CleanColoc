@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/userController';
-import { authenticateToken } from '../middlewares/authMiddleware';
 
 const router = Router();
 
@@ -80,16 +79,28 @@ router.post('/login', UserController.login);
 
 /**
  * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Rafraîchissement du token
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Nouvel access token retourné
+ *       401:
+ *         description: Refresh token manquant ou invalide
+ */
+router.post('/refresh', UserController.refresh);
+
+/**
+ * @swagger
  * /api/auth/logout:
  *   post:
  *     summary: Déconnexion
  *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Déconnexion réussie
  */
-router.post('/logout', authenticateToken, UserController.logout);
+router.post('/logout', UserController.logout);
 
 export default router;

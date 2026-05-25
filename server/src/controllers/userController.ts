@@ -48,12 +48,39 @@ export class UserController {
       res.status(200).json({ data: user });
     } catch (error) {
       next(error);
+    }
+  }
+
+  static async refresh(req: Request, res: Response, next: NextFunction) {
+    try {
+      const token = req.cookies['refreshToken'];
+      if (!token) {
+        res.status(401).json({ message: "Refresh token manquant" });
+        return;
       }
+
+      const { user, accessToken } = await AuthService.refresh(token);
+
+      res.status(200).json({
+        accessToken,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      res.clearCookie('refreshToken');
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
       res.status(200).json({ message: "Déconnexion réussie" });
     } catch (error) {
       next(error);

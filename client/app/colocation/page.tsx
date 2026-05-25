@@ -8,10 +8,13 @@ import { apiFetchAuth } from '@/lib/api';
 
 export default function ColocationChoicePage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
+  const { accessToken, logout, isLoading } = useAuth();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+   
+    if (isLoading) return;
+
     if (!accessToken) {
       router.push('/login');
       return;
@@ -24,13 +27,18 @@ export default function ColocationChoicePage() {
             router.push(`/colocation/${data.colocation.id}`);
           });
         }
-        // 404 = pas de coloc → on affiche la page normalement
         setChecking(false);
       })
       .catch(() => setChecking(false));
-  }, [accessToken]);
+  }, [accessToken, isLoading]);
 
-  if (checking) return null;
+  
+  if (isLoading || checking) return null;
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
 
   return (
     <>
@@ -232,6 +240,10 @@ export default function ColocationChoicePage() {
             </svg>
             CLEAN&apos; COLOC
           </Link>
+
+          <button className="btn-outline btn-sm" onClick={handleLogout}>
+            Se déconnecter
+          </button>
         </nav>
 
         <main className="center">

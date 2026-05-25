@@ -32,4 +32,28 @@ export class AuthService {
 
     return { user, accessToken, refreshToken };
   }
+
+  static async refresh(refreshToken: string) {
+    let payload: any;
+    try {
+      payload = jwt.verify(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET || 'secret_temporaire_refresh'
+      );
+    } catch {
+      const error: any = new Error("Refresh token invalide ou expiré");
+      error.status = 401;
+      throw error;
+    }
+
+    const user = await User.findOne({ where: { id: payload.id } });
+    if (!user) {
+      const error: any = new Error("Utilisateur introuvable");
+      error.status = 401;
+      throw error;
+    }
+
+    const accessToken = this.generateAccessToken(user.id);
+    return { user, accessToken };
+  }
 }

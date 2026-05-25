@@ -41,7 +41,7 @@ const startServer = async () => {
     app.use(cookieParser());
     app.use(requestLogger);
 
-    app.use('/api/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     // Routes
     app.use('/api/auth', authRoutes);
