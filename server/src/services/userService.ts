@@ -34,4 +34,19 @@ export class UserService {
     }
     return user;
   }
+  
+  static async updateUser(id: string, data: { username?: string; avatarUrl?: string }) {
+  const user = await User.findByPk(id);
+  if (!user) {
+    const error: any = new Error("Utilisateur non trouvé");
+    error.status = 404;
+    throw error;
+  }
+  if (data.username !== undefined) user.username = data.username;
+  if (data.avatarUrl !== undefined) user.avatarUrl = data.avatarUrl;
+  await user.save();
+  const { password, ...userWithoutPassword } = (user.toJSON() as any);
+  return userWithoutPassword;
+}
+
 }

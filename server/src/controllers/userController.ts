@@ -86,4 +86,20 @@ export class UserController {
       next(error);
     }
   }
+
+  static async updateProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user.id as string;
+    const { username, avatarUrl } = req.body;
+    if (!username && !avatarUrl) {
+      res.status(400).json({ message: "Aucune donnée à mettre à jour." });
+      return;
+    }
+    const updated = await UserService.updateUser(userId, { username, avatarUrl });
+    res.status(200).json({ message: "Profil mis à jour avec succès", data: updated });
+  } catch (error) {
+    next(error);
+  }
+}
+
 }
