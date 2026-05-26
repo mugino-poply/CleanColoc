@@ -101,5 +101,20 @@ export class UserController {
     next(error);
   }
 }
+static async deleteAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user.id as string;
+    const { password } = req.body;
+    if (!password) {
+      res.status(400).json({ message: "Mot de passe requis." });
+      return;
+    }
+    await UserService.deleteUser(userId, password);
+    res.clearCookie('refreshToken');
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}
 
 }

@@ -43,6 +43,33 @@ router.patch('/me', authenticateToken, UserController.updateProfile);
 
 /**
  * @swagger
+ * /api/users/me:
+ *   delete:
+ *     summary: Supprimer son compte
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *     responses:
+ *       204:
+ *         description: Compte supprimé
+ *       401:
+ *         description: Mot de passe incorrect
+ */
+router.delete('/me', authenticateToken, UserController.deleteAccount);
+
+/**
+ * @swagger
  * /api/users/{id}:
  *   get:
  *     summary: Récupérer le profil d'un utilisateur

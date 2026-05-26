@@ -49,4 +49,19 @@ export class UserService {
   return userWithoutPassword;
 }
 
+static async deleteUser(id: string, password: string) {
+  const user = await User.findByPk(id);
+  if (!user) {
+    const error: any = new Error("Utilisateur non trouvé");
+    error.status = 404;
+    throw error;
+  }
+  const passwordMatch = await user.comparePassword(password);
+  if (!passwordMatch) {
+    const error: any = new Error("Mot de passe incorrect");
+    error.status = 401;
+    throw error;
+  }
+  await user.destroy();
+}
 }
