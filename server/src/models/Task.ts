@@ -1,6 +1,5 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import TaskAssignment from './TaskAssignment';
 
 type RecurringInterval = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 
@@ -81,9 +80,5 @@ Task.init(
   }
 );
 
-Task.hasMany(TaskAssignment, {
-  foreignKey: 'taskId',
-  as: 'assignments',
-});
 
 export default Task;

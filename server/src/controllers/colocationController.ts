@@ -121,7 +121,7 @@ export const getMyColocation = async (
       include: [{
         model: Colocation,
         as: 'colocation',
-        attributes: ['id', 'name', 'description', 'inviteCode', 'createdAt'],
+        attributes: ['id', 'name', 'description', 'inviteCode', 'autoRotation', 'createdAt'],
       }],    
     });
 
@@ -208,6 +208,34 @@ export const getColocationMembers = async (
       });
 
     res.status(200).json(members);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateColocationSettings = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { autoRotation } = req.body;
+
+    if (typeof autoRotation !== 'boolean') {
+      res.status(400).json({ message: 'autoRotation doit être un booléen.' });
+      return;
+    }
+
+    const colocation = await Colocation.findByPk(id);
+    if (!colocation) {
+      res.status(404).json({ message: 'Colocation introuvable.' });
+      return;
+    }
+
+    await colocation.update({ autoRotation });
+
+    res.status(200).json({ autoRotation: colocation.autoRotation });
   } catch (error) {
     next(error);
   }
