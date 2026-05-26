@@ -2,13 +2,21 @@
 
 import { useState } from 'react';
 
-interface Task {
+interface TaskTemplate {
   id: string;
-  title: string;
   description: string | null;
-  status: 'à faire' | 'terminée';
-  assignedTo: string | null;
   dueDate: string | null;
+  isRecurring: boolean;
+  recurringInterval: string | null;
+  weight: number;
+}
+
+interface Assignment {
+  id: string;
+  taskId: string;
+  userId: string;
+  taskTitleSnapshot: string;
+  task: TaskTemplate;
 }
 
 interface Member {
@@ -21,22 +29,24 @@ interface Member {
 }
 
 interface TaskModalProps {
-  task: Task | null;
+  assignment: Assignment | null;
   members: Member[];
   onClose: () => void;
   onSubmit: (data: {
     title: string;
     description: string;
     dueDate: string;
-    assignedTo: string | null;
+    userId: string | null;
   }) => Promise<void>;
 }
 
-export default function TaskModal({ task, members, onClose, onSubmit }: TaskModalProps) {
-  const [title, setTitle] = useState(task?.title ?? '');
-  const [description, setDescription] = useState(task?.description ?? '');
-  const [dueDate, setDueDate] = useState(task?.dueDate ? task.dueDate.slice(0, 10) : '');
-  const [assignedTo, setAssignedTo] = useState<string | null>(task?.assignedTo ?? null);
+export default function TaskModal({ assignment, members, onClose, onSubmit }: TaskModalProps) {
+  const [title, setTitle] = useState(assignment?.taskTitleSnapshot ?? '');
+  const [description, setDescription] = useState(assignment?.task?.description ?? '');
+  const [dueDate, setDueDate] = useState(
+    assignment?.task?.dueDate ? assignment.task.dueDate.slice(0, 10) : ''
+  );
+  const [userId, setUserId] = useState<string | null>(assignment?.userId ?? null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +55,7 @@ export default function TaskModal({ task, members, onClose, onSubmit }: TaskModa
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit({ title: title.trim(), description, dueDate, assignedTo });
+      await onSubmit({ title: title.trim(), description, dueDate, userId });
     } catch {
       setError('Une erreur est survenue.');
       setSubmitting(false);
@@ -105,7 +115,7 @@ export default function TaskModal({ task, members, onClose, onSubmit }: TaskModa
           letterSpacing: '0.05em',
           margin: '0 0 1.5rem',
         }}>
-          {task ? 'Modifier la tâche' : 'Nouvelle tâche'}
+          {assignment ? 'Modifier la tâche' : 'Nouvelle tâche'}
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -122,7 +132,7 @@ export default function TaskModal({ task, members, onClose, onSubmit }: TaskModa
           <div>
             <label style={labelStyle}>Description</label>
             <textarea
-              value={description}
+              value={description ?? ''}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Détails optionnels…"
               rows={3}
@@ -143,8 +153,8 @@ export default function TaskModal({ task, members, onClose, onSubmit }: TaskModa
           <div>
             <label style={labelStyle}>Assigner à</label>
             <select
-              value={assignedTo ?? ''}
-              onChange={(e) => setAssignedTo(e.target.value || null)}
+              value={userId ?? ''}
+              onChange={(e) => setUserId(e.target.value || null)}
               style={{ ...inputStyle, cursor: 'pointer' }}
             >
               <option value="">Non assigné</option>
@@ -191,7 +201,7 @@ export default function TaskModal({ task, members, onClose, onSubmit }: TaskModa
                 opacity: submitting ? 0.7 : 1,
               }}
             >
-              {submitting ? 'Enregistrement…' : task ? 'Enregistrer' : 'Créer'}
+              {submitting ? 'Enregistrement…' : assignment ? 'Enregistrer' : 'Créer'}
             </button>
           </div>
         </div>
