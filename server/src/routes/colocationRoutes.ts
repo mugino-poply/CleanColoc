@@ -9,10 +9,8 @@ import {
 } from '../controllers/colocationController';
 import { checkIdParam } from '../middlewares/checkIdParam';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
-import {
-  getColocationTasks,
-  createTaskInColocation,
-} from '../controllers/taskController';
+import { getColocationAssignments } from '../controllers/assignmentController';
+import { createTaskInColocation } from '../controllers/taskController';
 
 const router = Router();
 
@@ -146,9 +144,9 @@ router.get('/:id', authenticateToken, getColocationById);
 
 /**
  * @swagger
- * /api/colocations/{id}/tasks:
+ * /api/colocations/{id}/assignments:
  *   get:
- *     summary: Liste les tâches de la colocation (avec filtres optionnels)
+ *     summary: Liste les assignations de la colocation (avec filtres optionnels)
  *     tags: [Colocations]
  *     security:
  *       - bearerAuth: []
@@ -161,21 +159,23 @@ router.get('/:id', authenticateToken, getColocationById);
  *           format: uuid
  *       - in: query
  *         name: status
- *         required: false
  *         schema:
  *           type: string
- *           enum: ['à faire', 'terminée']
- *         description: Filtrer par statut
+ *           enum: ['à faire', 'terminée', 'manquée']
  *       - in: query
- *         name: assignedTo
- *         required: false
+ *         name: userId
  *         schema:
  *           type: string
- *           format: uuid
- *         description: Filtrer par membre assigné
+ *           description: UUID d'un membre ou 'me'
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           enum: [current, next, past, all]
+ *           default: current
  *     responses:
  *       200:
- *         description: Liste des tâches
+ *         description: Liste des assignations
  *       400:
  *         description: Filtre invalide
  *       401:
@@ -186,11 +186,11 @@ router.get('/:id', authenticateToken, getColocationById);
  *         description: Erreur serveur
  */
 router.get(
-  '/:id/tasks',
+  '/:id/assignments',
   authenticateToken,
   checkIdParam,
   requireColocationMember,
-  getColocationTasks
+  getColocationAssignments
 );
 
 /**

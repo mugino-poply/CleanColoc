@@ -12,6 +12,8 @@ import userRoutes from './routes/userRoutes';
 import taskRoutes from './routes/taskRoutes';
 import colocationRoutes from './routes/colocationRoutes';
 import authRoutes from './routes/authRoutes'
+import assignmentRoutes from './routes/assignmentRoutes';
+
 
 const startServer = async () => {
     await initDatabase();
@@ -47,8 +49,9 @@ const startServer = async () => {
     app.use('/api/auth', authRoutes);
     app.use('/api/users', userRoutes);
     app.use('/api/tasks', taskRoutes);
+    app.use('/api/assignments', assignmentRoutes);
     app.use('/api/colocations', colocationRoutes);
-
+    
     // Toujours en dernier
     app.use(errorHandler);
 

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import Membership from '../models/Membership';
 import Task from '../models/Task';
+import TaskAssignment from '../models/TaskAssignment';
 
 /**
  * Vérifie que l'utilisateur authentifié est membre de la colocation visée.
@@ -8,10 +9,11 @@ import Task from '../models/Task';
  * Source de l'ID de colocation, par ordre de priorité :
  *   1. req.params.colocationId  (routes /api/colocations/:colocationId/...)
  *   2. req.params.id            (routes /api/colocations/:id)
- *   3. Pour les routes /api/tasks/:id — résolution via la Task
+ *   3. Routes /api/tasks/:id    — résolution via la Task
+ *   4. Routes /api/assignments/:id — résolution via la TaskAssignment
  *
  * Requiert authenticateToken en amont (lit req.user.id).
- * Pose req.colocationId et req.role sur la requête pour les controllers en aval.
+ * Pose req.colocationId, req.role, et req.task ou req.assignment sur la requête.
  */
 export const requireColocationMember = async (
   req: Request,
@@ -25,27 +27,39 @@ export const requireColocationMember = async (
       return;
     }
 
-    // Résolution de l'id de colocation selon la route
     let colocationId: string | undefined =
       (req.params['colocationId'] as string | undefined) ??
       (req.params['id'] as string | undefined);
 
-    // Cas des routes /api/tasks/:id — on récupère colocationId via la Task
     const isTaskRoute = req.baseUrl.endsWith('/tasks');
+    const isAssignmentRoute = req.baseUrl.endsWith('/assignments');
+
     if (isTaskRoute) {
       const taskId = req.params['id'] as string | undefined;
       if (!taskId) {
         res.status(400).json({ message: 'ID de tâche manquant.' });
         return;
       }
-      const task = await Task.findByPk(taskId)
+      const task = await Task.findByPk(taskId);
       if (!task) {
         res.status(404).json({ message: 'Tâche introuvable.' });
         return;
       }
       colocationId = task.colocationId;
-      // On stocke la tâche pour éviter un second findByPk dans le controller
       (req as any).task = task;
+    } else if (isAssignmentRoute) {
+      const assignmentId = req.params['id'] as string | undefined;
+      if (!assignmentId) {
+        res.status(400).json({ message: 'ID d\'assignation manquant.' });
+        return;
+      }
+      const assignment = await TaskAssignment.findByPk(assignmentId);
+      if (!assignment) {
+        res.status(404).json({ message: 'Assignation introuvable.' });
+        return;
+      }
+      colocationId = assignment.colocationId;
+      (req as any).assignment = assignment;
     }
 
     if (!colocationId) {
@@ -65,7 +79,6 @@ export const requireColocationMember = async (
       return;
     }
 
-    // Données utiles pour les controllers en aval
     (req as any).colocationId = colocationId;
     (req as any).role = membership.role;
 
