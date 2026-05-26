@@ -11,6 +11,7 @@ import { checkIdParam } from '../middlewares/checkIdParam';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
 import { getColocationAssignments } from '../controllers/assignmentController';
 import { createTaskInColocation } from '../controllers/taskController';
+import { updateColocationSettings } from '../controllers/colocationController';
 
 const router = Router();
 
@@ -303,5 +304,53 @@ router.get(
   getColocationMembers
 );
 
+/**
+ * @swagger
+ * /api/colocations/{id}/settings:
+ *   patch:
+ *     summary: Modifier les paramètres d'une colocation
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID de la colocation
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - autoRotation
+ *             properties:
+ *               autoRotation:
+ *                 type: boolean
+ *                 example: false
+ *     responses:
+ *       200:
+ *         description: Paramètres mis à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 autoRotation:
+ *                   type: boolean
+ *       400:
+ *         description: autoRotation manquant ou invalide
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       404:
+ *         description: Colocation introuvable
+ */
+router.patch('/:id/settings', authenticateToken, checkIdParam, requireColocationMember, updateColocationSettings);
 
 export default router;

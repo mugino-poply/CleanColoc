@@ -6,6 +6,7 @@ interface ColocationAttributes {
   name: string;
   description?: string;
   inviteCode: string;
+  autoRotation?: boolean;
   deletedAt?: Date;
 }
 
@@ -17,6 +18,7 @@ class Colocation extends Model<ColocationAttributes, ColocationCreationAttribute
   public name!: string;
   public description?: string;
   public inviteCode!: string;
+  public autoRotation!: boolean;
   public deletedAt?: Date;
 
   public readonly createdAt!: Date;
@@ -43,6 +45,11 @@ Colocation.init(
       type: DataTypes.STRING(8),
       allowNull: false,
       unique: true,
+    },
+    autoRotation: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
   },
   {
