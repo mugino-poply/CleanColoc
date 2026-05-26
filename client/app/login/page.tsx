@@ -20,7 +20,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // MODIFICATION : Port 3001 et noms des colonnes mail_user / password_user
       const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,7 +32,7 @@ export default function LoginPage() {
         setError(data.message || "Email ou mot de passe incorrect.");
       } else {
         login(data.user, data.accessToken);
-        router.push("/colocation"); // au lieu de /dashboard
+        router.push("/colocation"); 
       }
     } catch {
       setError("Une erreur est survenue. Vérifiez votre connexion.");

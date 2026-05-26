@@ -51,7 +51,7 @@ export default function JoinColocationPage() {
           setError(data.message || "Impossible de rejoindre cette colocation.");
         }
       } else {
-        router.push("/dashboard");
+        router.push(`/colocation/${data.id}`);
       }
     } catch {
       setError("Une erreur est survenue. Vérifiez votre connexion.");
