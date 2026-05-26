@@ -6,17 +6,29 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api';
 import TaskModal from './taskModal';
 
-interface Task {
+interface TaskTemplate {
   id: string;
-  title: string;
   description: string | null;
-  status: 'à faire' | 'terminée';
-  assignedTo: string | null;
-  colocationId: string;
   dueDate: string | null;
+  isRecurring: boolean;
+  recurringInterval: string | null;
+  weight: number;
+}
+
+interface Assignment {
+  id: string;
+  taskId: string;
+  userId: string;
+  colocationId: string;
+  periodStart: string;
+  periodEnd: string;
+  status: 'à faire' | 'terminée' | 'manquée';
   completedAt: string | null;
-  completedBy: string | null;
-  createdAt: string;
+  taskTitleSnapshot: string;
+  taskWeightSnapshot: number;
+  generationMethod: 'auto' | 'manual';
+  transferredFromUserId: string | null;
+  task: TaskTemplate;
 }
 
 interface Member {
@@ -33,30 +45,30 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const { accessToken, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterAssignedTo, setFilterAssignedTo] = useState('');
+  const [filterUserId, setFilterUserId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
 
-  const fetchTasks = () => {
+  const fetchAssignments = () => {
     const qs = new URLSearchParams();
     if (filterStatus) qs.set('status', filterStatus);
-    if (filterAssignedTo) qs.set('assignedTo', filterAssignedTo);
+    if (filterUserId) qs.set('userId', filterUserId);
     const query = qs.toString() ? `?${qs.toString()}` : '';
 
     setLoading(true);
-    apiFetch(`/api/colocations/${id}/tasks${query}`, {
+    apiFetch(`/api/colocations/${id}/assignments${query}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((res) => {
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         return res.json();
       })
-      .then((data: Task[]) => setTasks(data))
+      .then((data: Assignment[]) => setAssignments(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -72,39 +84,40 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
-    fetchTasks();
-  }, [id, filterStatus, filterAssignedTo, accessToken]);
+    fetchAssignments();
+  }, [id, filterStatus, filterUserId, accessToken]);
 
-  const handleComplete = async (task: Task) => {
-    await apiFetch(`/api/tasks/${task.id}/complete`, {
+  const handleComplete = async (assignment: Assignment) => {
+    await apiFetch(`/api/assignments/${assignment.id}/complete`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    fetchTasks();
+    fetchAssignments();
   };
 
-  const handleDelete = async (task: Task) => {
-    if (!window.confirm(`Supprimer la tâche "${task.title}" ?`)) return;
-    await apiFetch(`/api/tasks/${task.id}`, {
+  const handleDelete = async (assignment: Assignment) => {
+    if (!window.confirm(`Supprimer la tâche "${assignment.taskTitleSnapshot}" ?`)) return;
+    await apiFetch(`/api/tasks/${assignment.taskId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    fetchTasks();
+    fetchAssignments();
   };
 
   const handleModalSubmit = async (data: {
     title: string;
     description: string;
     dueDate: string;
-    assignedTo: string | null;
+    userId: string | null;
   }) => {
     const jsonHeaders = {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     };
 
-    if (editingTask) {
-      await apiFetch(`/api/tasks/${editingTask.id}`, {
+    if (editingAssignment) {
+      // Modification du template
+      await apiFetch(`/api/tasks/${editingAssignment.taskId}`, {
         method: 'PATCH',
         headers: jsonHeaders,
         body: JSON.stringify({
@@ -113,14 +126,16 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           dueDate: data.dueDate || null,
         }),
       });
-      if (data.assignedTo !== editingTask.assignedTo) {
-        await apiFetch(`/api/tasks/${editingTask.id}/assign`, {
+      // Modification de l'assigné si changé
+      if (data.userId !== editingAssignment.userId) {
+        await apiFetch(`/api/assignments/${editingAssignment.id}/assign`, {
           method: 'PATCH',
           headers: jsonHeaders,
-          body: JSON.stringify({ assignedTo: data.assignedTo }),
+          body: JSON.stringify({ userId: data.userId }),
         });
       }
     } else {
+      // Création du template + assignation auto au créateur
       const res = await apiFetch(`/api/colocations/${id}/tasks`, {
         method: 'POST',
         headers: jsonHeaders,
@@ -128,21 +143,23 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           title: data.title,
           description: data.description || null,
           dueDate: data.dueDate || null,
+          isRecurring: false,
         }),
       });
-      if (data.assignedTo && res.ok) {
-        const created: Task = await res.json();
-        await apiFetch(`/api/tasks/${created.id}/assign`, {
+      // Si un assigné différent du créateur est choisi, on réassigne
+      if (res.ok && data.userId) {
+        const created: { task: { id: string }; assignment: { id: string } } = await res.json();
+        await apiFetch(`/api/assignments/${created.assignment.id}/assign`, {
           method: 'PATCH',
           headers: jsonHeaders,
-          body: JSON.stringify({ assignedTo: data.assignedTo }),
+          body: JSON.stringify({ userId: data.userId }),
         });
       }
     }
 
     setModalOpen(false);
-    setEditingTask(null);
-    fetchTasks();
+    setEditingAssignment(null);
+    fetchAssignments();
   };
 
   const getMember = (userId: string | null) =>
@@ -150,6 +167,12 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
   const isOverdue = (dueDate: string | null, status: string) =>
     status === 'à faire' && !!dueDate && new Date(dueDate) < new Date();
+
+  const statusColor = (status: Assignment['status']) => {
+    if (status === 'terminée') return '#8ec450';
+    if (status === 'manquée') return '#e24b4a';
+    return '#ef9f27';
+  };
 
   return (
     <main style={{
@@ -187,7 +210,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             Tâches
           </h1>
           <button
-            onClick={() => { setEditingTask(null); setModalOpen(true); }}
+            onClick={() => { setEditingAssignment(null); setModalOpen(true); }}
             style={{
               background: '#fff',
               color: '#3d6124',
@@ -222,10 +245,11 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             <option value="">Tous les statuts</option>
             <option value="à faire">À faire</option>
             <option value="terminée">Terminées</option>
+            <option value="manquée">Manquées</option>
           </select>
           <select
-            value={filterAssignedTo}
-            onChange={(e) => setFilterAssignedTo(e.target.value)}
+            value={filterUserId}
+            onChange={(e) => setFilterUserId(e.target.value)}
             style={{
               flex: 1,
               background: 'rgba(255,255,255,0.12)',
@@ -247,7 +271,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         {loading && <p style={{ color: 'rgba(255,255,255,0.7)' }}>Chargement…</p>}
         {error && <p style={{ color: '#e24b4a' }}>{error}</p>}
 
-        {!loading && !error && tasks.length === 0 && (
+        {!loading && !error && assignments.length === 0 && (
           <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', marginTop: '4rem' }}>
             <p style={{ fontSize: '1.1rem' }}>Aucune tâche pour le moment.</p>
             <p style={{ fontSize: '0.9rem' }}>Crée la première !</p>
@@ -256,18 +280,18 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
         {!loading && !error && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {tasks.map((task, i) => {
-              const assignee = getMember(task.assignedTo);
-              const overdue = isOverdue(task.dueDate, task.status);
+            {assignments.map((assignment, i) => {
+              const assignee = getMember(assignment.userId);
+              const overdue = isOverdue(assignment.task?.dueDate ?? null, assignment.status);
               return (
                 <div
-                  key={task.id}
+                  key={assignment.id}
                   style={{
                     background: 'rgba(255,255,255,0.1)',
                     backdropFilter: 'blur(12px)',
                     borderRadius: 24,
                     padding: '1.25rem 1.5rem',
-                    borderLeft: `4px solid ${task.status === 'terminée' ? '#8ec450' : '#ef9f27'}`,
+                    borderLeft: `4px solid ${statusColor(assignment.status)}`,
                     opacity: 0,
                     animation: 'fadeUp 0.4s ease forwards',
                     animationDelay: `${i * 0.06}s`,
@@ -280,31 +304,31 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                           fontWeight: 700,
                           color: '#fff',
                           fontSize: '1rem',
-                          textDecoration: task.status === 'terminée' ? 'line-through' : 'none',
-                          opacity: task.status === 'terminée' ? 0.6 : 1,
+                          textDecoration: assignment.status === 'terminée' ? 'line-through' : 'none',
+                          opacity: assignment.status === 'terminée' ? 0.6 : 1,
                         }}>
-                          {task.title}
+                          {assignment.taskTitleSnapshot}
                         </span>
                         <span style={{
                           fontSize: '0.7rem',
                           fontWeight: 700,
                           padding: '0.15rem 0.6rem',
                           borderRadius: 999,
-                          background: task.status === 'terminée' ? '#8ec450' : '#ef9f27',
+                          background: statusColor(assignment.status),
                           color: '#fff',
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em',
                           flexShrink: 0,
                         }}>
-                          {task.status}
+                          {assignment.status}
                         </span>
                       </div>
 
-                      {task.description && (
+                      {assignment.task?.description && (
                         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
-                          {task.description.length > 100
-                            ? task.description.slice(0, 100) + '…'
-                            : task.description}
+                          {assignment.task.description.length > 100
+                            ? assignment.task.description.slice(0, 100) + '…'
+                            : assignment.task.description}
                         </p>
                       )}
 
@@ -312,13 +336,13 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                         <span style={{ color: assignee ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)', fontSize: '0.8rem' }}>
                           👤 {assignee ? assignee.username : 'Non assigné'}
                         </span>
-                        {task.dueDate && (
+                        {assignment.task?.dueDate && (
                           <span style={{
                             color: overdue ? '#e24b4a' : 'rgba(255,255,255,0.6)',
                             fontSize: '0.8rem',
                             fontWeight: overdue ? 700 : 400,
                           }}>
-                            📅 {new Date(task.dueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            📅 {new Date(assignment.task.dueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                             {overdue && ' · En retard'}
                           </span>
                         )}
@@ -327,8 +351,8 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
                     <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                       <button
-                        onClick={() => handleComplete(task)}
-                        title={task.status === 'à faire' ? 'Marquer comme terminée' : 'Rouvrir'}
+                        onClick={() => handleComplete(assignment)}
+                        title={assignment.status === 'terminée' ? 'Rouvrir' : 'Marquer comme terminée'}
                         style={{
                           background: 'rgba(255,255,255,0.15)',
                           border: 'none',
@@ -343,10 +367,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                           color: '#fff',
                         }}
                       >
-                        {task.status === 'à faire' ? '✓' : '↩'}
+                        {assignment.status === 'terminée' ? '↩' : '✓'}
                       </button>
                       <button
-                        onClick={() => { setEditingTask(task); setModalOpen(true); }}
+                        onClick={() => { setEditingAssignment(assignment); setModalOpen(true); }}
                         title="Modifier"
                         style={{
                           background: 'rgba(255,255,255,0.15)',
@@ -365,7 +389,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                         ✎
                       </button>
                       <button
-                        onClick={() => handleDelete(task)}
+                        onClick={() => handleDelete(assignment)}
                         title="Supprimer"
                         style={{
                           background: 'rgba(255,255,255,0.08)',
@@ -394,9 +418,9 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
       {modalOpen && (
         <TaskModal
-          task={editingTask}
+          assignment={editingAssignment}
           members={members}
-          onClose={() => { setModalOpen(false); setEditingTask(null); }}
+          onClose={() => { setModalOpen(false); setEditingAssignment(null); }}
           onSubmit={handleModalSubmit}
         />
       )}

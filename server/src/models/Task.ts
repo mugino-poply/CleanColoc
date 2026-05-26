@@ -1,36 +1,33 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
+import TaskAssignment from './TaskAssignment';
+
+type RecurringInterval = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 
 interface TaskAttributes {
   id: string;
   title: string;
   description?: string;
-  status: 'à faire' | 'terminée';
-  assignedTo?: string;
   colocationId: string;
   isRecurring: boolean;
-  recurringInterval?: string;
+  recurringInterval?: RecurringInterval;
   dueDate?: Date;
-  completedAt?: Date;
-  completedBy?: string;
+  weight: number;
   deletedAt?: Date;
 }
 
-interface TaskCreationAttributes extends Optional<TaskAttributes, 'id'> {}
+interface TaskCreationAttributes extends Optional<TaskAttributes, 'id' | 'weight'> {}
 
 class Task extends Model<TaskAttributes, TaskCreationAttributes>
   implements TaskAttributes {
   public id!: string;
   public title!: string;
   public description?: string;
-  public status!: 'à faire' | 'terminée';
-  public assignedTo?: string;
   public colocationId!: string;
   public isRecurring!: boolean;
-  public recurringInterval?: string;
+  public recurringInterval?: RecurringInterval;
   public dueDate?: Date;
-  public completedAt?: Date;
-  public completedBy?: string;
+  public weight!: number;
   public deletedAt?: Date;
 
   public readonly createdAt!: Date;
@@ -53,15 +50,6 @@ Task.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    status: {
-      type: DataTypes.ENUM('à faire', 'terminée'),
-      allowNull: false,
-      defaultValue: 'à faire',
-    },
-    assignedTo: {
-      type: DataTypes.UUID,
-      allowNull: true,
-    },
     colocationId: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -72,20 +60,17 @@ Task.init(
       defaultValue: false,
     },
     recurringInterval: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM('daily', 'weekly', 'biweekly', 'monthly'),
       allowNull: true,
     },
     dueDate: {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    completedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    completedBy: {
-      type: DataTypes.UUID,
-      allowNull: true,
+    weight: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
     },
   },
   {
@@ -95,5 +80,10 @@ Task.init(
     paranoid: true,
   }
 );
+
+Task.hasMany(TaskAssignment, {
+  foreignKey: 'taskId',
+  as: 'assignments',
+});
 
 export default Task;
