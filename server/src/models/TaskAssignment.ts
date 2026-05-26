@@ -116,4 +116,9 @@ TaskAssignment.belongsTo(Task, {
   as: 'task',
 });
 
+Task.hasMany(TaskAssignment, {
+  foreignKey: 'taskId',
+  as: 'assignments',
+});
+
 export default TaskAssignment;

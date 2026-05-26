@@ -219,7 +219,7 @@ export const updateColocationSettings = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { autoRotation } = req.body;
 
     if (typeof autoRotation !== 'boolean') {

@@ -116,7 +116,6 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     };
 
     if (editingAssignment) {
-      // Modification du template
       await apiFetch(`/api/tasks/${editingAssignment.taskId}`, {
         method: 'PATCH',
         headers: jsonHeaders,
@@ -126,7 +125,6 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           dueDate: data.dueDate || null,
         }),
       });
-      // Modification de l'assigné si changé
       if (data.userId !== editingAssignment.userId) {
         await apiFetch(`/api/assignments/${editingAssignment.id}/assign`, {
           method: 'PATCH',
@@ -135,7 +133,6 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         });
       }
     } else {
-      // Création du template + assignation auto au créateur
       const res = await apiFetch(`/api/colocations/${id}/tasks`, {
         method: 'POST',
         headers: jsonHeaders,
@@ -146,7 +143,6 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           isRecurring: false,
         }),
       });
-      // Si un assigné différent du créateur est choisi, on réassigne
       if (res.ok && data.userId) {
         const created: { task: { id: string }; assignment: { id: string } } = await res.json();
         await apiFetch(`/api/assignments/${created.assignment.id}/assign`, {
@@ -183,22 +179,44 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
 
-        <button
-          onClick={() => router.push(`/colocation/${id}`)}
-          style={{
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.4)',
-            color: '#fff',
-            borderRadius: 999,
-            padding: '0.4rem 1.2rem',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-            marginBottom: '1.5rem',
-          }}
-        >
-          ← Retour
-        </button>
+        {/* Ligne 1 : Retour + Engrenage */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <button
+            onClick={() => router.push(`/colocation/${id}`)}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.4)',
+              color: '#fff',
+              borderRadius: 999,
+              padding: '0.4rem 1.2rem',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+            }}
+          >
+            ← Retour
+          </button>
+          <button
+            onClick={() => router.push(`/colocation/${id}/tasks/settings`)}
+            title="Paramètres"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.5)',
+              fontSize: '1.3rem',
+              display: 'flex',
+              alignItems: 'center',
+              padding: 0,
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+          >
+            ⚙
+          </button>
+        </div>
 
+        {/* Ligne 2 : Titre + Nouvelle tâche */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <h1 style={{
             fontFamily: 'Bebas Neue, sans-serif',
@@ -414,6 +432,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             })}
           </div>
         )}
+
       </div>
 
       {modalOpen && (
