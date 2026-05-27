@@ -80,5 +80,4 @@ Task.init(
   }
 );
 
-
 export default Task;
