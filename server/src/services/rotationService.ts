@@ -102,6 +102,68 @@ export function getNextPeriod(
   }
 }
 
+
+export function getCurrentPeriod(
+  interval: string,
+  colocationCreatedAt: Date,
+  now: Date
+): { periodStart: Date; periodEnd: Date } {
+  switch (interval) {
+    case 'daily': {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      return { periodStart: start, periodEnd: end };
+    }
+
+    case 'weekly': {
+      // Lundi de la semaine courante → dimanche
+      const day = now.getDay(); // 0=dimanche
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      const start = new Date(now);
+      start.setDate(start.getDate() + diffToMonday);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return { periodStart: start, periodEnd: end };
+    }
+
+    case 'biweekly': {
+      // Trouve le lundi de début du cycle biweekly courant
+      const day = now.getDay();
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      const thisMonday = new Date(now);
+      thisMonday.setDate(thisMonday.getDate() + diffToMonday);
+      thisMonday.setHours(0, 0, 0, 0);
+
+      const weeksSinceCreation = Math.floor(
+        (thisMonday.getTime() - colocationCreatedAt.getTime()) / MS_PER_WEEK
+      );
+      // Si semaine impaire dans le cycle biweekly, on recule d'une semaine
+      const cycleStart = new Date(thisMonday);
+      if (weeksSinceCreation % 2 === 1) {
+        cycleStart.setDate(cycleStart.getDate() - 7);
+      }
+      const end = new Date(cycleStart);
+      end.setDate(end.getDate() + 13);
+      end.setHours(23, 59, 59, 999);
+      return { periodStart: cycleStart, periodEnd: end };
+    }
+
+    case 'monthly': {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { periodStart: start, periodEnd: end };
+    }
+
+    default:
+      throw new Error(`[rotation] interval inconnu : ${interval}`);
+  }
+}
+
 // ─── Algorithme de sélection ──────────────────────────────────────────────────
 
 /**
@@ -249,6 +311,70 @@ export async function processColocation(
       `Nouvelle tâche : ${task.title} — du ${periodStart.toLocaleDateString('fr-BE')} au ${periodEnd.toLocaleDateString('fr-BE')}`
     );
   }
+}
+
+export async function regenerateForColocation(
+  colocationId: string,
+  period: 'current' | 'next',
+  now: Date = new Date()
+): Promise<TaskAssignment[]> {
+  const colocation = await Colocation.findByPk(colocationId);
+  if (!colocation) throw new Error(`Colocation introuvable : ${colocationId}`);
+
+  const tasks = await Task.findAll({
+    where: { colocationId, isRecurring: true },
+  });
+
+  const memberships = await Membership.findAll({
+    where: { colocationId },
+    attributes: ['userId'],
+  });
+  const memberUserIds = memberships.map(m => m.userId);
+
+  const colocationCreatedAt = new Date(colocation.createdAt as unknown as string);
+  const created: TaskAssignment[] = [];
+
+  for (const task of tasks) {
+    const interval = task.recurringInterval;
+    if (!interval) continue;
+
+    const { periodStart, periodEnd } =
+      period === 'current'
+        ? getCurrentPeriod(interval, colocationCreatedAt, now)
+        : getNextPeriod(interval, now);
+
+    // Soft delete les assignations non complétées de la période ciblée
+    await TaskAssignment.destroy({
+      where: {
+        taskId: task.id,
+        periodStart,
+        status: ['à faire', 'manquée'],
+      },
+    });
+
+    const selectedUserId = await selectNextAssignee(
+      task.id,
+      colocationId,
+      memberUserIds,
+      periodStart
+    );
+
+    const assignment = await TaskAssignment.create({
+      taskId: task.id,
+      colocationId,
+      userId: selectedUserId,
+      status: 'à faire',
+      periodStart,
+      periodEnd,
+      taskTitleSnapshot: task.title as string,
+      taskWeightSnapshot: task.weight ?? 1,
+      generationMethod: 'auto',
+    });
+
+    created.push(assignment);
+  }
+
+  return created;
 }
 
 /**
