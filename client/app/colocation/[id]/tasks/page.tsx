@@ -5,6 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api';
 import TaskModal from './taskModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface TaskTemplate {
   id: string;
@@ -53,6 +64,25 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const handleRegenerate = async (period: 'current' | 'next') => {
+    setRegenerating(true);
+    try {
+      await apiFetch(`/api/colocations/${id}/assignments/regenerate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ period }),
+      });
+      fetchAssignments();
+    } catch (err) {
+      console.error('Erreur régénération :', err);
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const fetchAssignments = () => {
     const qs = new URLSearchParams();
@@ -215,8 +245,47 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             ⚙
           </button>
         </div>
+        
+        {/* Ligne 2 : Regénérer les assignations */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                disabled={regenerating}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: 'rgba(255,255,255,0.7)',
+                  borderRadius: 999,
+                  padding: '0.4rem 1.2rem',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                }}
+              >
+                {regenerating ? 'Régénération…' : '↺ Régénérer les assignations'}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Régénérer les assignations</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Les tâches déjà complétées ne seront pas affectées. Choisissez la période à régénérer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleRegenerate('current')}>
+                  Période courante
+                </AlertDialogAction>
+                <AlertDialogAction onClick={() => handleRegenerate('next')}>
+                  Période suivante
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
 
-        {/* Ligne 2 : Titre + Nouvelle tâche */}
+        {/* Ligne 3 : Titre + Nouvelle tâche */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <h1 style={{
             fontFamily: 'Bebas Neue, sans-serif',

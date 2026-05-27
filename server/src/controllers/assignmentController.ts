@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import TaskAssignment from '../models/TaskAssignment';
 import Membership from '../models/Membership';
 import Task from '../models/Task';
+import { regenerateForColocation } from '../services/rotationService';
 
 const ASSIGNMENT_PUBLIC_ATTRIBUTES = [
   'id',
@@ -255,5 +256,27 @@ export const deleteAssignment = async (
     res.status(204).send();
   } catch (error) {
     next(error);
+  }
+};
+
+export const regenerateAssignments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const colocationId = req.params['id'] as string;
+    const { period } = req.body as { period?: string };
+
+    if (period !== 'current' && period !== 'next') {
+      res.status(400).json({ error: "Le champ 'period' doit valoir 'current' ou 'next'." });
+      return;
+    }
+
+    const assignments = await regenerateForColocation(colocationId, period);
+
+    res.status(200).json({ assignments });
+  } catch (err) {
+    next(err);
   }
 };

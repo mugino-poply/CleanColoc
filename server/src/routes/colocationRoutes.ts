@@ -12,6 +12,8 @@ import { requireColocationMember } from '../middlewares/requireColocationMember'
 import { getColocationAssignments } from '../controllers/assignmentController';
 import { createTaskInColocation } from '../controllers/taskController';
 import { updateColocationSettings } from '../controllers/colocationController';
+import { regenerateAssignments } from '../controllers/assignmentController';
+
 
 const router = Router();
 
@@ -352,5 +354,55 @@ router.get(
  *         description: Colocation introuvable
  */
 router.patch('/:id/settings', authenticateToken, checkIdParam, requireColocationMember, updateColocationSettings);
+
+
+/**
+ * @swagger
+ * /api/colocations/{id}/assignments/regenerate:
+ *   post:
+ *     summary: Régénère manuellement les assignations pour la période courante ou suivante
+ *     tags: [Assignments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [period]
+ *             properties:
+ *               period:
+ *                 type: string
+ *                 enum: [current, next]
+ *     responses:
+ *       200:
+ *         description: Assignations régénérées
+ *       400:
+ *         description: Valeur de period invalide
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       404:
+ *         description: Colocation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post(
+  '/:id/assignments/regenerate',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  regenerateAssignments
+);
+
 
 export default router;
