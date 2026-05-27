@@ -58,40 +58,58 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [filterUser, setFilterUser] = useState<'me' | 'all'>('me');
+  const [filterPeriod, setFilterPeriod] = useState<'current' | 'next' | 'past' | 'all'>('current');
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterUserId, setFilterUserId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [regenerating, setRegenerating] = useState(false);
-  const handleRegenerate = async (period: 'current' | 'next') => {
-    setRegenerating(true);
-    try {
-      await apiFetch(`/api/colocations/${id}/assignments/regenerate`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ period }),
-      });
-      fetchAssignments();
-    } catch (err) {
-      console.error('Erreur régénération :', err);
-    } finally {
-      setRegenerating(false);
-    }
-  };
 
-  const fetchAssignments = () => {
+  // Fetch déclenché par les filtres
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+
     const qs = new URLSearchParams();
+    if (filterUser === 'me') qs.set('userId', 'me');
+    qs.set('period', filterPeriod);
     if (filterStatus) qs.set('status', filterStatus);
-    if (filterUserId) qs.set('userId', filterUserId);
-    const query = qs.toString() ? `?${qs.toString()}` : '';
 
     setLoading(true);
-    apiFetch(`/api/colocations/${id}/assignments${query}`, {
+    setError(null);
+    apiFetch(`/api/colocations/${id}/assignments?${qs.toString()}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Erreur ${res.status}`);
+        return res.json();
+      })
+      .then((data: Assignment[]) => setAssignments(data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id, filterUser, filterPeriod, filterStatus, accessToken, isAuthenticated]);
+
+  // Fetch membres
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+    apiFetch(`/api/colocations/${id}/members`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data: Member[]) => setMembers(data));
+  }, [id, accessToken, isAuthenticated]);
+
+  // Refresh manuel post-action
+  const refreshAssignments = () => {
+    const qs = new URLSearchParams();
+    if (filterUser === 'me') qs.set('userId', 'me');
+    qs.set('period', filterPeriod);
+    if (filterStatus) qs.set('status', filterStatus);
+
+    setLoading(true);
+    setError(null);
+    apiFetch(`/api/colocations/${id}/assignments?${qs.toString()}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((res) => {
@@ -103,26 +121,31 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
-    apiFetch(`/api/colocations/${id}/members`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => res.json())
-      .then((data: Member[]) => setMembers(data));
-  }, [id, accessToken]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
-    fetchAssignments();
-  }, [id, filterStatus, filterUserId, accessToken]);
+  const handleRegenerate = async (period: 'current' | 'next') => {
+    setRegenerating(true);
+    try {
+      await apiFetch(`/api/colocations/${id}/assignments/regenerate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ period }),
+      });
+      refreshAssignments();
+    } catch (err) {
+      console.error('Erreur régénération :', err);
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const handleComplete = async (assignment: Assignment) => {
     await apiFetch(`/api/assignments/${assignment.id}/complete`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    fetchAssignments();
+    refreshAssignments();
   };
 
   const handleDelete = async (assignment: Assignment) => {
@@ -131,7 +154,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       method: 'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    fetchAssignments();
+    refreshAssignments();
   };
 
   const handleModalSubmit = async (data: {
@@ -185,7 +208,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
     setModalOpen(false);
     setEditingAssignment(null);
-    fetchAssignments();
+    refreshAssignments();
   };
 
   const getMember = (userId: string | null) =>
@@ -199,6 +222,18 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     if (status === 'manquée') return '#e24b4a';
     return '#ef9f27';
   };
+
+  const toggleStyle = (active: boolean): React.CSSProperties => ({
+    background: active ? '#fff' : 'transparent',
+    color: active ? '#3d6124' : 'rgba(255,255,255,0.7)',
+    border: 'none',
+    borderRadius: 999,
+    padding: '0.35rem 1rem',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+    fontWeight: active ? 700 : 400,
+    transition: 'all 0.2s',
+  });
 
   return (
     <main style={{
@@ -245,8 +280,8 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             ⚙
           </button>
         </div>
-        
-        {/* Ligne 2 : Regénérer les assignations */}
+
+        {/* Ligne 2 : Régénérer */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -314,44 +349,41 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         </div>
 
         {/* Filtres */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', borderRadius: 999, padding: 4, alignSelf: 'flex-start' }}>
+            {(['me', 'all'] as const).map((v) => (
+              <button key={v} onClick={() => setFilterUser(v)} style={toggleStyle(filterUser === v)}>
+                {v === 'me' ? 'Mes tâches' : 'Toute la coloc'}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', borderRadius: 999, padding: 4, alignSelf: 'flex-start' }}>
+            {(['current', 'next', 'past', 'all'] as const).map((v) => (
+              <button key={v} onClick={() => setFilterPeriod(v)} style={toggleStyle(filterPeriod === v)}>
+                {v === 'current' ? 'En cours' : v === 'next' ? 'Suivante' : v === 'past' ? 'Passée' : 'Tout'}
+              </button>
+            ))}
+          </div>
+
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             style={{
-              flex: 1,
+              alignSelf: 'flex-start',
               background: 'rgba(255,255,255,0.12)',
               border: 'none',
-              borderRadius: 12,
-              padding: '0.6rem 1rem',
+              borderRadius: 999,
+              padding: '0.4rem 1rem',
               color: '#fff',
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
               cursor: 'pointer',
             }}
           >
             <option value="">Tous les statuts</option>
             <option value="à faire">À faire</option>
-            <option value="terminée">Terminées</option>
-            <option value="manquée">Manquées</option>
-          </select>
-          <select
-            value={filterUserId}
-            onChange={(e) => setFilterUserId(e.target.value)}
-            style={{
-              flex: 1,
-              background: 'rgba(255,255,255,0.12)',
-              border: 'none',
-              borderRadius: 12,
-              padding: '0.6rem 1rem',
-              color: '#fff',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="">Tous les membres</option>
-            {members.map((m) => (
-              <option key={m.userId} value={m.userId}>{m.username}</option>
-            ))}
+            <option value="terminée">Terminée</option>
+            <option value="manquée">Manquée</option>
           </select>
         </div>
 
