@@ -3,6 +3,7 @@ import Colocation from '../models/Colocation';
 import Membership from '../models/Membership';
 import { randomBytes } from 'crypto';
 import User from '../models/user';
+import sequelize from '../config/database';
 
 const generateInviteCode = (): string => {
   return randomBytes(4).toString('hex').toUpperCase();
@@ -236,6 +237,63 @@ export const updateColocationSettings = async (
     await colocation.update({ autoRotation });
 
     res.status(200).json({ autoRotation: colocation.autoRotation });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const transferAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const colocationId = req.params.id;
+    const requesterId = req.user?.id;
+    const { toUserId } = req.body;
+
+    if (!toUserId) {
+      res.status(400).json({ error: 'Le champ toUserId est requis.' });
+      return;
+    }
+
+    if (toUserId === requesterId) {
+      res.status(400).json({ error: 'Vous êtes déjà administrateur.' });
+      return;
+    }
+
+    const targetMembership = await Membership.findOne({
+      where: { userId: toUserId, colocationId },
+    });
+
+    if (!targetMembership) {
+      res.status(400).json({ error: "L'utilisateur ciblé n'est pas membre de cette colocation." });
+      return;
+    }
+
+    if (targetMembership.role === 'admin') {
+      res.status(400).json({ error: 'Cet utilisateur est déjà administrateur.' });
+      return;
+    }
+
+    const requesterMembership = await Membership.findOne({
+      where: { userId: requesterId, colocationId },
+    });
+
+    await sequelize.transaction(async (t) => {
+      await requesterMembership!.update({ role: 'member' }, { transaction: t });
+      await targetMembership.update({ role: 'admin' }, { transaction: t });
+    });
+
+    // notify(toUserId, 'Vous êtes maintenant administrateur de la colocation.');
+
+    res.status(200).json({
+      membership: {
+        userId: toUserId,
+        role: 'admin',
+        colocationId,
+      },
+    });
   } catch (error) {
     next(error);
   }
