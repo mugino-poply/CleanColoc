@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api';
 import TaskModal from './taskModal';
+import TransferDialog from './TransferDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,6 +67,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [transferringAssignment, setTransferringAssignment] = useState<Assignment | null>(null);
 
   // Fetch déclenché par les filtres
   useEffect(() => {
@@ -154,6 +156,24 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       method: 'DELETE',
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    refreshAssignments();
+  };
+
+  const handleTransfer = async (toUserId: string) => {
+    if (!transferringAssignment) return;
+    const res = await apiFetch(`/api/assignments/${transferringAssignment.id}/transfer`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ toUserId }),
+    });
+    if (!res.ok) {
+      const body = await res.json();
+      throw new Error(body.message ?? `Erreur ${res.status}`);
+    }
+    setTransferringAssignment(null);
     refreshAssignments();
   };
 
@@ -535,6 +555,27 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                       >
                         ✎
                       </button>
+                      {assignment.status === 'à faire' && (
+                        <button
+                          onClick={() => setTransferringAssignment(assignment)}
+                          title="Transférer à un autre membre"
+                          style={{
+                            background: 'rgba(255,255,255,0.15)',
+                            border: 'none',
+                            borderRadius: 999,
+                            width: 36,
+                            height: 36,
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                          }}
+                        >
+                          ↔
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(assignment)}
                         title="Supprimer"
@@ -570,6 +611,16 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           members={members}
           onClose={() => { setModalOpen(false); setEditingAssignment(null); }}
           onSubmit={handleModalSubmit}
+        />
+      )}
+
+      {transferringAssignment && (
+        <TransferDialog
+          assignmentTitle={transferringAssignment.taskTitleSnapshot}
+          currentUserId={transferringAssignment.userId}
+          members={members}
+          onConfirm={handleTransfer}
+          onClose={() => setTransferringAssignment(null)}
         />
       )}
 
