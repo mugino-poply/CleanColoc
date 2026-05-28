@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
+import sequelize from '../config/database';
 import TaskAssignment from '../models/TaskAssignment';
 import Membership from '../models/Membership';
 import Task from '../models/Task';
@@ -278,5 +279,147 @@ export const regenerateAssignments = async (
     res.status(200).json({ assignments });
   } catch (err) {
     next(err);
+  }
+};
+
+/**
+ * US-36 — GET /api/colocations/:id/assignments/stats
+ * Matrice agrégée membre × tâche sur une période optionnelle.
+ * Agrégation GROUP BY côté serveur via raw SQL.
+ */
+export const getAssignmentStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const colocationId = (req as any).colocationId as string;
+    const { from, to } = req.query as { from?: string; to?: string };
+
+    if (from && isNaN(Date.parse(from))) {
+      res.status(400).json({ message: 'Le paramètre from doit être une date ISO valide.' });
+      return;
+    }
+    if (to && isNaN(Date.parse(to))) {
+      res.status(400).json({ message: 'Le paramètre to doit être une date ISO valide.' });
+      return;
+    }
+
+    const replacements: Record<string, unknown> = { colocationId };
+    const dateClauses: string[] = [];
+
+    if (from) {
+      dateClauses.push(`ta."periodStart" >= :from`);
+      replacements['from'] = new Date(from);
+    }
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+      dateClauses.push(`ta."periodStart" <= :to`);
+      replacements['to'] = toDate;
+    }
+
+    const dateClause =
+      dateClauses.length > 0 ? `AND ${dateClauses.join(' AND ')}` : '';
+
+    const matrix = await sequelize.query<{
+      userId: string;
+      taskId: string;
+      taskTitle: string;
+      username: string;
+      avatarUrl: string | null;
+      total: number;
+      completed: number;
+      pending: number;
+    }>(
+      `
+      SELECT
+        ta."userId",
+        ta."taskId",
+        ta."taskTitleSnapshot"                                              AS "taskTitle",
+        u.username,
+        u."avatarUrl",
+        COUNT(*)::int                                                       AS total,
+        SUM(CASE WHEN ta.status = 'terminée' THEN 1 ELSE 0 END)::int      AS completed,
+        SUM(CASE WHEN ta.status = 'à faire'  THEN 1 ELSE 0 END)::int      AS pending
+      FROM   "TaskAssignments" ta
+      JOIN   "Users" u
+        ON   u.id = ta."userId"
+       AND   u."deletedAt" IS NULL
+      WHERE  ta."colocationId" = :colocationId
+        AND  ta."deletedAt"    IS NULL
+        ${dateClause}
+      GROUP BY
+        ta."userId",
+        ta."taskId",
+        ta."taskTitleSnapshot",
+        u.username,
+        u."avatarUrl"
+      ORDER BY u.username, ta."taskTitleSnapshot"
+      `,
+      { replacements, type: QueryTypes.SELECT }
+    );
+
+    // Agrégation des totaux en mémoire (volume toujours faible : N membres × M tâches)
+    type MemberTotal = {
+      userId: string;
+      username: string;
+      avatarUrl: string | null;
+      total: number;
+      completed: number;
+    };
+    type TaskTotal = {
+      taskId: string;
+      taskTitle: string;
+      total: number;
+      completed: number;
+    };
+
+    const memberMap = new Map<string, MemberTotal>();
+    const taskMap   = new Map<string, TaskTotal>();
+
+    for (const row of matrix) {
+      if (!memberMap.has(row.userId)) {
+        memberMap.set(row.userId, {
+          userId:   row.userId,
+          username: row.username,
+          avatarUrl: row.avatarUrl,
+          total:    0,
+          completed: 0,
+        });
+      }
+      const m = memberMap.get(row.userId)!;
+      m.total     += row.total;
+      m.completed += row.completed;
+
+      if (!taskMap.has(row.taskId)) {
+        taskMap.set(row.taskId, {
+          taskId:    row.taskId,
+          taskTitle: row.taskTitle,
+          total:     0,
+          completed: 0,
+        });
+      }
+      const t = taskMap.get(row.taskId)!;
+      t.total     += row.total;
+      t.completed += row.completed;
+    }
+
+    // Tri décroissant par tâches terminées → mostLoaded = [0], leastLoaded = [last]
+    const memberTotals = Array.from(memberMap.values()).sort(
+      (a, b) => b.completed - a.completed
+    );
+    const taskTotals = Array.from(taskMap.values());
+
+    res.status(200).json({
+      period:      { from: from ?? null, to: to ?? null },
+      matrix,
+      memberTotals,
+      taskTotals,
+      mostLoaded:  memberTotals[0]                           ?? null,
+      leastLoaded: memberTotals[memberTotals.length - 1]     ?? null,
+    });
+  } catch (error) {
+    next(error);
   }
 };

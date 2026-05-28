@@ -244,7 +244,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
 
-        {/* Ligne 1 : Retour + Engrenage */}
+        {/* Ligne 1 : Retour + actions secondaires */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <button
             onClick={() => router.push(`/colocation/${id}`)}
@@ -260,25 +260,53 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           >
             ← Retour
           </button>
-          <button
-            onClick={() => router.push(`/colocation/${id}/tasks/settings`)}
-            title="Paramètres"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'rgba(255,255,255,0.5)',
-              fontSize: '1.3rem',
-              display: 'flex',
-              alignItems: 'center',
-              padding: 0,
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-          >
-            ⚙
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={() => router.push(`/colocation/${id}/tasks/history`)}
+              title="Historique des assignations"
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: 'rgba(255,255,255,0.6)',
+                borderRadius: 999,
+                padding: '0.4rem 1rem',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+              }}
+            >
+              📊 Historique
+            </button>
+
+            <button
+              onClick={() => router.push(`/colocation/${id}/tasks/settings`)}
+              title="Paramètres"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.5)',
+                fontSize: '1.3rem',
+                display: 'flex',
+                alignItems: 'center',
+                padding: 0,
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+            >
+              ⚙
+            </button>
+          </div>
         </div>
 
         {/* Ligne 2 : Régénérer */}
