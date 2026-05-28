@@ -423,3 +423,92 @@ export const getAssignmentStats = async (
     next(error);
   }
 };
+
+/**
+ * US-37 — PATCH /api/assignments/:id/transfer
+ * Transfère une assignation vers un autre membre.
+ * Seul le membre actuellement assigné ou le membre cible peut déclencher le transfert.
+ * Protégé par transaction pour atomicité.
+ */
+export const transferAssignment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const t = await sequelize.transaction();
+  try {
+    const assignment = (req as any).assignment as TaskAssignment;
+    const requesterId = (req as any).user.id as string;
+
+    if (['terminée', 'manquée'].includes(assignment.status)) {
+      await t.rollback();
+      res.status(400).json({
+        message: "Impossible de transférer une tâche déjà terminée ou manquée.",
+      });
+      return;
+    }
+
+    const { toUserId } = req.body as { toUserId?: unknown };
+
+    if (!toUserId || typeof toUserId !== 'string') {
+      await t.rollback();
+      res.status(400).json({ message: "Le champ toUserId est obligatoire (UUID)." });
+      return;
+    }
+
+    // Règle d'autorisation US-37 : seul l'assigné actuel ou la cible peut transférer
+    if (requesterId !== assignment.userId && requesterId !== toUserId) {
+      await t.rollback();
+      res.status(403).json({
+        message: "Seul le membre assigné ou le membre cible peut effectuer ce transfert.",
+      });
+      return;
+    }
+
+    // Pas de transfert vers soi-même
+    if (toUserId === assignment.userId) {
+      await t.rollback();
+      res.status(400).json({
+        message: "L'assignation est déjà attribuée à ce membre.",
+      });
+      return;
+    }
+
+    const targetMembership = await Membership.findOne({
+      where: { userId: toUserId, colocationId: assignment.colocationId },
+      attributes: ['id'],
+      transaction: t,
+    });
+    if (!targetMembership) {
+      await t.rollback();
+      res.status(400).json({
+        message: "L'utilisateur cible n'est pas membre de cette colocation.",
+      });
+      return;
+    }
+
+    const previousUserId = assignment.userId;
+
+    await assignment.update(
+      {
+        userId: toUserId,
+        transferredFromUserId: previousUserId,
+        generationMethod: 'manual',
+      },
+      { transaction: t }
+    );
+
+    await t.commit();
+
+    // Notification stub — sera branché sur US-38
+    // notify(toUserId, 'assignment_transferred', { assignmentId: assignment.id });
+
+    const refreshed = await TaskAssignment.findByPk(assignment.id, {
+      attributes: [...ASSIGNMENT_PUBLIC_ATTRIBUTES],
+    });
+    res.status(200).json(refreshed);
+  } catch (error) {
+    await t.rollback();
+    next(error);
+  }
+};

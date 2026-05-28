@@ -6,6 +6,7 @@ import {
   assignTask,
   completeTask,
   deleteAssignment,
+  transferAssignment,
 } from '../controllers/assignmentController';
 
 const router = Router();
@@ -101,6 +102,56 @@ router.patch(
   checkIdParam,
   requireColocationMember,
   completeTask
+);
+
+/**
+ * @swagger
+ * /api/assignments/{id}/transfer:
+ *   patch:
+ *     summary: Transférer une assignation vers un autre membre
+ *     tags: [Assignments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - toUserId
+ *             properties:
+ *               toUserId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: UUID du membre destinataire
+ *     responses:
+ *       200:
+ *         description: Assignation transférée
+ *       400:
+ *         description: toUserId manquant, transfert vers soi-même, statut invalide, ou cible non membre
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Requester non autorisé (ni assigné ni cible)
+ *       404:
+ *         description: Assignation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.patch(
+  '/:id/transfer',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  transferAssignment
 );
 
 /**
