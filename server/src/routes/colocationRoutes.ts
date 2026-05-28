@@ -9,13 +9,16 @@ import {
 } from '../controllers/colocationController';
 import { checkIdParam } from '../middlewares/checkIdParam';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
+import { checkAdminRole } from '../middlewares/checkAdminRole';
 import {
   getColocationAssignments,
   getAssignmentStats,
   regenerateAssignments,
 } from '../controllers/assignmentController';
 import { createTaskInColocation } from '../controllers/taskController';
-import { updateColocationSettings } from '../controllers/colocationController';
+import { 
+  updateColocationSettings,
+  transferAdmin } from '../controllers/colocationController';
 
 
 const router = Router();
@@ -491,6 +494,73 @@ router.post(
   checkIdParam,
   requireColocationMember,
   regenerateAssignments
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/admin/transfer:
+ *   patch:
+ *     summary: Transférer le rôle admin à un autre membre
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID de la colocation
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - toUserId
+ *             properties:
+ *               toUserId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: UUID du membre qui deviendra admin
+ *     responses:
+ *       200:
+ *         description: Rôle admin transféré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 membership:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [admin]
+ *                     colocationId:
+ *                       type: string
+ *       400:
+ *         description: toUserId manquant, non membre, ou déjà admin
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Appelant non admin
+ *       404:
+ *         description: Colocation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.patch(
+  '/:id/admin/transfer',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  checkAdminRole,
+  transferAdmin
 );
 
 

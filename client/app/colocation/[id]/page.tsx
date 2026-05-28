@@ -58,6 +58,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
   const [colocation, setColocation] = useState<Colocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [role, setRole] = useState<'admin' | 'member' | null>(null);
   console.log('API BASE:', process.env.NEXT_PUBLIC_API_URL); 
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
         }
         const data = await res.json();
         setColocation(data.colocation);
+        setRole(data.role);
       })
       .catch(() => router.push('/colocation'))
       .finally(() => setLoading(false));
@@ -197,7 +199,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
             </h1>
           </div>
 
-          <div className="anim-2" style={{ marginBottom: '40px' }}>
+          <div className="anim-2" style={{ marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               className={copied ? 'invite-btn copied' : 'invite-btn'}
               onClick={copyInviteCode}
@@ -214,6 +216,30 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
                 {copied ? 'Copié !' : 'Copier le code'}
               </span>
             </button>
+
+            {role === 'admin' && (
+              <Link
+                href={`/colocation/${id}/settings`}
+                style={{
+                  marginLeft: 'auto',
+                  background: 'rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '12px',
+                  padding: '8px 12px',
+                  color: 'white',
+                  fontSize: '1.2rem',
+                  textDecoration: 'none',
+                  transition: 'background .2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+                title="Paramètres admin"
+              >
+                ⚙️
+              </Link>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
