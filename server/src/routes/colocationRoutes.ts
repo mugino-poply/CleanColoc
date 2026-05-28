@@ -9,10 +9,13 @@ import {
 } from '../controllers/colocationController';
 import { checkIdParam } from '../middlewares/checkIdParam';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
-import { getColocationAssignments } from '../controllers/assignmentController';
+import {
+  getColocationAssignments,
+  getAssignmentStats,
+  regenerateAssignments,
+} from '../controllers/assignmentController';
 import { createTaskInColocation } from '../controllers/taskController';
 import { updateColocationSettings } from '../controllers/colocationController';
-import { regenerateAssignments } from '../controllers/assignmentController';
 
 
 const router = Router();
@@ -144,6 +147,92 @@ router.get('/me', authenticateToken, getMyColocation);
  *         description: Erreur serveur
  */
 router.get('/:id', authenticateToken, getColocationById);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/assignments/stats:
+ *   get:
+ *     summary: Statistiques d'assignation - matrice membre x tâche
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID de la colocation
+ *       - in: query
+ *         name: from
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Début de période (ISO 8601, ex. 2026-05-01). Absent = depuis le début.
+ *       - in: query
+ *         name: to
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Fin de période (ISO 8601, ex. 2026-05-31). La journée entière est incluse.
+ *     responses:
+ *       200:
+ *         description: Matrice plate + totaux membres + totaux tâches + indicateurs de charge
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 period:
+ *                   type: object
+ *                   properties:
+ *                     from: { type: string, nullable: true }
+ *                     to:   { type: string, nullable: true }
+ *                 matrix:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       userId:    { type: string }
+ *                       taskId:    { type: string }
+ *                       taskTitle: { type: string }
+ *                       username:  { type: string }
+ *                       avatarUrl: { type: string, nullable: true }
+ *                       total:     { type: integer }
+ *                       completed: { type: integer }
+ *                       pending:   { type: integer }
+ *                 memberTotals:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 taskTotals:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 mostLoaded:  { type: object, nullable: true }
+ *                 leastLoaded: { type: object, nullable: true }
+ *       400:
+ *         description: Paramètre de date invalide
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       404:
+ *         description: Colocation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get(
+  '/:id/assignments/stats',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  getAssignmentStats
+);
+
 
 /**
  * @swagger
