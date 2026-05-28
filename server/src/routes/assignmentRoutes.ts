@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { checkIdParam } from '../middlewares/checkIdParam';
 import { authenticateToken } from '../middlewares/authMiddleware';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
+import { checkAdminRole } from '../middlewares/checkAdminRole';
 import {
   assignTask,
   completeTask,
@@ -22,7 +23,7 @@ const router = Router();
  * @swagger
  * /api/assignments/{id}/assign:
  *   patch:
- *     summary: Réassigner une TaskAssignment à un membre
+ *     summary: Réassigner une TaskAssignment à un membre (admin uniquement)
  *     tags: [Assignments]
  *     security:
  *       - bearerAuth: []
@@ -53,7 +54,7 @@ const router = Router();
  *       401:
  *         description: Non authentifié
  *       403:
- *         description: Non membre de la colocation
+ *         description: Non membre de la colocation ou non admin
  *       404:
  *         description: Assignation introuvable
  *       500:
@@ -64,6 +65,7 @@ router.patch(
   authenticateToken,
   checkIdParam,
   requireColocationMember,
+  checkAdminRole,
   assignTask
 );
 
