@@ -5,6 +5,16 @@ import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../../../components/ui/alert-dialog';
 
 interface Member {
   membershipId: string;
@@ -13,6 +23,17 @@ interface Member {
   avatarUrl: string | null;
   role: 'admin' | 'member';
   joinedAt: string;
+}
+
+/** Décode le payload JWT pour récupérer l'id de l'utilisateur connecté.
+ *  Le payload JWT n'est pas chiffré, juste signé — lecture côté client safe. */
+function getUserIdFromToken(token: string): string | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export default function MembersPage({
@@ -25,26 +46,70 @@ export default function MembersPage({
   const router = useRouter();
 
   const [members, setMembers] = useState<Member[]>([]);
+  const [myRole, setMyRole] = useState<string>('');
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [pendingRemove, setPendingRemove] = useState<Member | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
+    if (!accessToken) return;
 
-    apiFetch(`/api/colocations/${id}/members`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Erreur ${res.status}`);
-        return res.json();
+    setMyUserId(getUserIdFromToken(accessToken));
+
+    Promise.all([
+      apiFetch('/api/colocations/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
+      apiFetch(`/api/colocations/${id}/members`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
+    ])
+      .then(async ([meRes, membersRes]) => {
+        if (!meRes.ok || !membersRes.ok) throw new Error('Erreur de chargement');
+        const meData = await meRes.json();
+        setMyRole(meData.role ?? '');
+        // getColocationMembers retourne un tableau direct
+        const data: Member[] = await membersRes.json();
+        setMembers(data);
       })
-      .then((data: Member[]) => setMembers(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id, accessToken, isAuthenticated, router]);
+
+  const handleRemove = async () => {
+    if (!pendingRemove || !accessToken) return;
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      const res = await apiFetch(
+        `/api/colocations/${id}/members/${pendingRemove.userId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setRemoveError(data.message || 'Erreur lors du retrait.');
+        return;
+      }
+      // Mise à jour optimiste : retire le membre sans rechargement complet
+      setMembers((prev) => prev.filter((m) => m.userId !== pendingRemove.userId));
+      setPendingRemove(null);
+    } catch {
+      setRemoveError('Impossible de joindre le serveur.');
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   return (
     <main
@@ -85,12 +150,10 @@ export default function MembersPage({
           Colocataires
         </h1>
 
-        {loading && (
-          <p style={{ color: 'rgba(255,255,255,0.7)' }}>Chargement…</p>
-        )}
-
-        {error && (
-          <p style={{ color: '#e24b4a' }}>{error}</p>
+        {loading && <p style={{ color: 'rgba(255,255,255,0.7)' }}>Chargement…</p>}
+        {error && <p style={{ color: '#e24b4a' }}>{error}</p>}
+        {removeError && (
+          <p style={{ color: '#e24b4a', marginBottom: '1rem' }}>{removeError}</p>
         )}
 
         {!loading && !error && (
@@ -111,7 +174,7 @@ export default function MembersPage({
                   animationDelay: `${i * 0.08}s`,
                 }}
               >
-                {/* Avatar */}
+                {/* Avatar — identique à l'original */}
                 <div
                   style={{
                     width: 48,
@@ -139,24 +202,12 @@ export default function MembersPage({
                   )}
                 </div>
 
-                {/* Infos */}
+                {/* Infos — identique à l'original */}
                 <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      color: '#fff',
-                      fontWeight: 600,
-                      fontSize: '1rem',
-                    }}
-                  >
+                  <div style={{ color: '#fff', fontWeight: 600, fontSize: '1rem' }}>
                     {member.username}
                   </div>
-                  <div
-                    style={{
-                      color: 'rgba(255,255,255,0.6)',
-                      fontSize: '0.8rem',
-                      marginTop: 2,
-                    }}
-                  >
+                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', marginTop: 2 }}>
                     Depuis le{' '}
                     {new Date(member.joinedAt).toLocaleDateString('fr-FR', {
                       day: 'numeric',
@@ -166,7 +217,7 @@ export default function MembersPage({
                   </div>
                 </div>
 
-                {/* Badge rôle */}
+                {/* Badge admin — identique à l'original */}
                 {member.role === 'admin' && (
                   <span
                     style={{
@@ -183,10 +234,57 @@ export default function MembersPage({
                     Admin
                   </span>
                 )}
+
+                {/* Bouton Retirer — visible uniquement pour l'admin, pas sur sa propre carte */}
+                {myRole === 'admin' && member.userId !== myUserId && (
+                  <button
+                    onClick={() => {
+                      setRemoveError(null);
+                      setPendingRemove(member);
+                    }}
+                    style={{
+                      background: 'rgba(226,75,74,0.15)',
+                      border: '1px solid rgba(226,75,74,0.4)',
+                      color: '#e24b4a',
+                      borderRadius: 999,
+                      padding: '0.3rem 0.9rem',
+                      fontSize: '0.8rem',
+                      fontFamily: 'DM Sans, sans-serif',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Retirer
+                  </button>
+                )}
               </div>
             ))}
           </div>
         )}
+
+        {/* AlertDialog confirmation retrait */}
+        <AlertDialog
+          open={!!pendingRemove}
+          onOpenChange={(open) => { if (!open) setPendingRemove(null); }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Retirer {pendingRemove?.username} de la colocation ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Ce membre sera retiré immédiatement. Ses tâches en cours seront
+                désassignées. Cette action ne peut pas être annulée.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRemove} disabled={removing}>
+                {removing ? 'Retrait…' : 'Confirmer'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <style>{`

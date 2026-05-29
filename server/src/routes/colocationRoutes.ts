@@ -5,7 +5,10 @@ import {
   joinColocation,
   getMyColocation,
   getColocationById,
-  getColocationMembers
+  getColocationMembers,
+  updateColocationInfo,
+  regenerateInviteCode,
+  removeMember
 } from '../controllers/colocationController';
 import { checkIdParam } from '../middlewares/checkIdParam';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
@@ -561,6 +564,167 @@ router.patch(
   requireColocationMember,
   checkAdminRole,
   transferAdmin
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}:
+ *   patch:
+ *     summary: Modifier le nom et/ou la description de la colocation (admin uniquement)
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "La coloc des artistes"
+ *               description:
+ *                 type: string
+ *                 example: "Notre belle coloc du 3ème"
+ *     responses:
+ *       200:
+ *         description: Informations mises à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 colocation:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     name: { type: string }
+ *                     description: { type: string }
+ *                     inviteCode: { type: string }
+ *                     autoRotation: { type: boolean }
+ *                     updatedAt: { type: string }
+ *       400:
+ *         description: Body invalide (aucun champ présent ou name vide)
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non admin
+ *       404:
+ *         description: Colocation introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
+router.patch(
+  '/:id',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  checkAdminRole,
+  updateColocationInfo
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/invite-code/regenerate:
+ *   post:
+ *     summary: Régénérer le code d'invitation de la colocation (admin uniquement)
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Nouveau code généré
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 inviteCode:
+ *                   type: string
+ *                   example: "A1B2C3D4"
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non admin
+ *       404:
+ *         description: Colocation introuvable
+ *       500:
+ *         description: Erreur serveur (collision non résoluble après 5 tentatives)
+ */
+router.post(
+  '/:id/invite-code/regenerate',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  checkAdminRole,
+  regenerateInviteCode
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/members/{userId}:
+ *   delete:
+ *     summary: Retirer un membre de la colocation (admin uniquement)
+ *     tags: [Colocations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Membre retiré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Membre retiré de la colocation."
+ *       400:
+ *         description: Tentative de se retirer soi-même
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non admin
+ *       404:
+ *         description: Membre introuvable dans cette colocation
+ *       500:
+ *         description: Erreur serveur
+ */
+router.delete(
+  '/:id/members/:userId',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  checkAdminRole,
+  removeMember
 );
 
 

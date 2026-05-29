@@ -77,7 +77,7 @@ export default function SettingsPage() {
         }}
       >
         <button
-          onClick={() => router.push(`/colocation/${id}`)}
+          onClick={() => router.push(`/colocation/${id}/tasks`)}
           className="text-white/60 hover:text-white text-sm self-start transition-colors"
         >
           ← Retour
