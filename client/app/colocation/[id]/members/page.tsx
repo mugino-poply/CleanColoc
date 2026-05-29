@@ -54,6 +54,9 @@ export default function MembersPage({
   const [pendingRemove, setPendingRemove] = useState<Member | null>(null);
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -76,6 +79,7 @@ export default function MembersPage({
         if (!meRes.ok || !membersRes.ok) throw new Error('Erreur de chargement');
         const meData = await meRes.json();
         setMyRole(meData.role ?? '');
+        setInviteCode(meData.colocation?.inviteCode ?? null);
         // getColocationMembers retourne un tableau direct
         const data: Member[] = await membersRes.json();
         setMembers(data);
@@ -138,17 +142,48 @@ export default function MembersPage({
           ← Retour
         </button>
 
-        <h1
-          style={{
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <h1 style={{
             fontFamily: 'Bebas Neue, sans-serif',
             fontSize: '3rem',
             color: '#fff',
             letterSpacing: '0.05em',
-            marginBottom: '2rem',
-          }}
-        >
-          Colocataires
-        </h1>
+            margin: 0,
+          }}>
+            Colocataires
+          </h1>
+
+          {inviteCode && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(inviteCode);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              style={{
+                background: copied ? 'rgba(100,200,100,0.2)' : 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 12,
+                padding: '0.5rem 1rem',
+                color: '#fff',
+                fontFamily: 'Bebas Neue, sans-serif',
+                fontSize: '1.1rem',
+                letterSpacing: '0.15em',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'background 0.2s',
+                flexShrink: 0,
+              }}
+            >
+              {inviteCode}
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.7rem', opacity: 0.7, fontWeight: 400, letterSpacing: 0 }}>
+                {copied ? 'Copié !' : 'Copier'}
+              </span>
+            </button>
+          )}
+        </div>
 
         {loading && <p style={{ color: 'rgba(255,255,255,0.7)' }}>Chargement…</p>}
         {error && <p style={{ color: '#e24b4a' }}>{error}</p>}
