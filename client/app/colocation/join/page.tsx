@@ -1,20 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function JoinColocationPage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
+  const { accessToken, isAuthenticated, isLoading } = useAuth();
 
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Normalise la saisie : majuscules, sans espaces, max 8 chars
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <main
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#3d6124',
+        }}
+      >
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif' }}>
+          Chargement...
+        </p>
+      </main>
+    );
+  }
+
   function handleCodeChange(val: string) {
     setInviteCode(val.toUpperCase().replace(/\s/g, "").slice(0, 8));
   }
@@ -196,10 +220,7 @@ export default function JoinColocationPage() {
           margin-bottom: 8px;
         }
 
-        /* Input stylisé pour le code : grande fonte, centré, monospace */
-        .code-input-wrapper {
-          position: relative;
-        }
+        .code-input-wrapper { position: relative; }
         .code-input {
           width: 100%;
           background: rgba(255,255,255,.12);
@@ -230,7 +251,6 @@ export default function JoinColocationPage() {
           margin-top: 6px;
         }
 
-        /* Barre de progression du code */
         .code-progress {
           height: 2px;
           background: rgba(255,255,255,.12);

@@ -54,14 +54,15 @@ const NAV_CARDS: NavCard[] = [
 export default function ColocationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { accessToken, isAuthenticated } = useAuth();
+  const { accessToken, isAuthenticated, isLoading } = useAuth();
   const [colocation, setColocation] = useState<Colocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [role, setRole] = useState<'admin' | 'member' | null>(null);
-  console.log('API BASE:', process.env.NEXT_PUBLIC_API_URL); 
 
   useEffect(() => {
+    if (isLoading) return;
+
     if (!isAuthenticated) {
       router.push('/login');
       return;
@@ -84,7 +85,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
       })
       .catch(() => router.push('/colocation'))
       .finally(() => setLoading(false));
-  }, [isAuthenticated, accessToken, router]);
+  }, [isLoading, isAuthenticated, accessToken, router]);
 
   const copyInviteCode = () => {
     if (!colocation) return;
@@ -93,7 +94,7 @@ export default function ColocationDetailPage({ params }: { params: Promise<{ id:
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <main
         style={{

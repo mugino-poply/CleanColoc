@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,13 +14,39 @@ interface CreateColocationResponse {
 
 export default function CreateColocationPage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
+  const { accessToken, isAuthenticated, isLoading } = useAuth();
 
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState<CreateColocationResponse | null>(null);
   const [copied, setCopied] = useState(false);
+
+  
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <main
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#3d6124',
+        }}
+      >
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif' }}>
+          Chargement...
+        </p>
+      </main>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -228,7 +254,6 @@ export default function CreateColocationPage() {
           margin-bottom: 20px;
         }
 
-        /* ── Success state ── */
         .success-icon {
           font-size: 2.4rem;
           margin-bottom: 16px;
@@ -297,7 +322,6 @@ export default function CreateColocationPage() {
 
         <main className="center">
           {!created ? (
-            /* ── Formulaire ── */
             <div className="card anim-2">
               <p className="card__eyebrow">Nouvel espace</p>
               <h1 className="card__title">Créer une colocation</h1>
@@ -328,7 +352,6 @@ export default function CreateColocationPage() {
               </form>
             </div>
           ) : (
-            /* ── Succès ── */
             <div className="card anim-2">
               <div className="success-icon">🎉</div>
               <p className="card__eyebrow">Colocation créée</p>
@@ -354,7 +377,6 @@ export default function CreateColocationPage() {
               >
                 Accéder à mon espace →
               </button>
-
             </div>
           )}
         </main>
