@@ -22,6 +22,7 @@ import { createTaskInColocation } from '../controllers/taskController';
 import { 
   updateColocationSettings,
   transferAdmin } from '../controllers/colocationController';
+import { createExpense } from '../controllers/expenseController';
 
 
 const router = Router();
@@ -677,6 +678,78 @@ router.post(
 
 /**
  * @swagger
+ * /api/colocations/{id}/expenses:
+ *   post:
+ *     summary: Créer une dépense partagée (US-19)
+ *     tags: [Expenses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID de la colocation
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - amount
+ *               - category
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: Courses Carrefour
+ *               amount:
+ *                 type: integer
+ *                 description: "Montant en centimes (ex: 4250 = 42,50 €)"
+ *                 example: 4250
+ *               category:
+ *                 type: string
+ *                 example: courses
+ *               description:
+ *                 type: string
+ *                 nullable: true
+ *                 example: Courses de la semaine
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 description: "Format YYYY-MM-DD. Défaut : aujourd'hui"
+ *                 example: "2026-05-29"
+ *               memberIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: "Membres concernés. Défaut : tous les membres actifs"
+ *     responses:
+ *       201:
+ *         description: Dépense créée avec ses parts calculées
+ *       400:
+ *         description: Champs invalides ou memberIds non membres de la colocation
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de cette colocation
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post(
+  '/:id/expenses',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  createExpense
+);
+
+/**
+ * @swagger
  * /api/colocations/{id}/members/{userId}:
  *   delete:
  *     summary: Retirer un membre de la colocation (admin uniquement)
@@ -726,6 +799,7 @@ router.delete(
   checkAdminRole,
   removeMember
 );
+
 
 
 export default router;
