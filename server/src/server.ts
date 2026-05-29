@@ -14,6 +14,8 @@ import colocationRoutes from './routes/colocationRoutes';
 import authRoutes from './routes/authRoutes'
 import assignmentRoutes from './routes/assignmentRoutes';
 import { startScheduler } from "./services/schedulerService";
+import expenseRoutes from './routes/expenseRoutes';
+
 
 
 const startServer = async () => {
@@ -52,6 +54,7 @@ const startServer = async () => {
     app.use('/api/tasks', taskRoutes);
     app.use('/api/assignments', assignmentRoutes);
     app.use('/api/colocations', colocationRoutes);
+    app.use('/api/expenses', expenseRoutes);
     
     // Toujours en dernier
     app.use(errorHandler);
