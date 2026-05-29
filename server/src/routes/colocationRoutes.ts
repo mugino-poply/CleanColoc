@@ -22,7 +22,11 @@ import { createTaskInColocation } from '../controllers/taskController';
 import { 
   updateColocationSettings,
   transferAdmin } from '../controllers/colocationController';
-import { createExpense } from '../controllers/expenseController';
+import { 
+  createExpense, 
+  getExpenses 
+} from '../controllers/expenseController';
+
 
 
 const router = Router();
@@ -727,6 +731,7 @@ router.post(
  *                 items:
  *                   type: string
  *                   format: uuid
+ *                   example: f89e637d-ced4-4ef9-ad6a-2d571aee52d5
  *                 description: "Membres concernés. Défaut : tous les membres actifs"
  *     responses:
  *       201:
@@ -746,6 +751,40 @@ router.post(
   checkIdParam,
   requireColocationMember,
   createExpense
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/expenses:
+ *   get:
+ *     summary: Lister les dépenses d'une colocation
+ *     tags: [Expenses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID de la colocation
+ *     responses:
+ *       200:
+ *         description: Liste des dépenses avec leurs parts
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get(
+  '/:id/expenses',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  getExpenses
 );
 
 /**

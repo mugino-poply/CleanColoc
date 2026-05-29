@@ -151,3 +151,105 @@ export const createExpense = async (
     next(error);
   }
 };
+
+/**
+ * US-20 — GET /api/expenses/:id
+ *
+ * Retourne le détail complet d'une dépense :
+ * titre, montant, catégorie, date, description, payeur, parts par membre.
+ *
+ * L'accès est garanti par requireColocationMember (req.expense déjà chargé).
+ * On refetch avec includes pour obtenir les relations complètes.
+ */
+export const getExpense = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const expense = (req as any).expense as InstanceType<typeof Expense>;
+
+    const full = await Expense.findByPk(expense.id, {
+      attributes: [
+        'id',
+        'title',
+        'amount',
+        'category',
+        'description',
+        'date',
+        'payerId',
+        'payerSnapshot',
+        'colocationId',
+        'createdAt',
+      ],
+      include: [
+        {
+          model: ExpenseShare,
+          as: 'shares',
+          attributes: ['id', 'userId', 'userSnapshot', 'amount'],
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'username', 'avatarUrl'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!full) {
+      res.status(404).json({ message: 'Dépense introuvable.' });
+      return;
+    }
+
+    res.status(200).json(full);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+/**
+ * GET /api/colocations/:id/expenses
+ *
+ * Retourne toutes les dépenses actives de la colocation,
+ * triées par date décroissante (la plus récente en premier).
+ * Chaque dépense embarque ses parts (shares) avec snapshot utilisateur.
+ */
+export const getExpenses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const colocationId = (req as any).colocationId as string;
+
+    const expenses = await Expense.findAll({
+      where: { colocationId },
+      attributes: [
+        'id',
+        'title',
+        'amount',
+        'category',
+        'description',
+        'date',
+        'payerId',
+        'payerSnapshot',
+        'createdAt',
+      ],
+      include: [
+        {
+          model: ExpenseShare,
+          as: 'shares',
+          attributes: ['id', 'userId', 'userSnapshot', 'amount'],
+        },
+      ],
+      order: [['date', 'DESC']],
+    });
+
+    res.status(200).json(expenses);
+  } catch (error) {
+    next(error);
+  }
+};
