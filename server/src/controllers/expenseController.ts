@@ -253,3 +253,143 @@ export const getExpenses = async (
     next(error);
   }
 };
+
+
+/**
+ * US-21 — GET /api/colocations/:id/balances
+ *
+ * Calcule les soldes nets de chaque membre et simplifie les dettes.
+ *
+ * net(membre) = total payé − total des parts
+ * Positif → on lui doit. Négatif → il doit.
+ *
+ * Les dépenses avec payerId null (membre retiré) sont exclues du crédit.
+ * Les parts avec userId null sont exclues du débit.
+ */
+export const getBalances = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const colocationId = (req as any).colocationId as string;
+
+    // Récupère tous les membres actifs de la coloc pour les snapshots
+    const memberships = await Membership.findAll({
+      where: { colocationId },
+      attributes: ['userId'],
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'username', 'avatarUrl'],
+        },
+      ],
+    });
+
+    const memberIds = memberships.map((m) => m.userId);
+
+    if (memberIds.length === 0) {
+      res.status(200).json({ balances: [], debts: [] });
+      return;
+    }
+
+    // Récupère toutes les dépenses actives avec leurs parts
+    const expenses = await Expense.findAll({
+      where: { colocationId },
+      attributes: ['id', 'amount', 'payerId', 'payerSnapshot'],
+      include: [
+        {
+          model: ExpenseShare,
+          as: 'shares',
+          attributes: ['userId', 'userSnapshot', 'amount'],
+        },
+      ],
+    });
+
+    // Passe 1 : calcul du bilan net par membre (en centimes)
+    const nets = new Map<string, number>(memberIds.map((id) => [id, 0]));
+
+    for (const expense of expenses) {
+      // Crédit : le payeur a avancé le montant total
+      if (expense.payerId && nets.has(expense.payerId)) {
+        nets.set(expense.payerId, nets.get(expense.payerId)! + expense.amount);
+      }
+
+      // Débit : chaque membre concerné doit sa part
+      const shares = (expense as any).shares as Array<{
+        userId: string | null;
+        userSnapshot: string;
+        amount: number;
+      }>;
+
+      for (const share of shares) {
+        if (share.userId && nets.has(share.userId)) {
+          nets.set(share.userId, nets.get(share.userId)! - share.amount);
+        }
+      }
+    }
+
+    // Construction de la réponse balances avec snapshots
+    const userInfoMap = new Map<string, { username: string; avatarUrl: string | null }>();
+    for (const m of memberships) {
+      const user = (m as any).User as { id: string; username: string; avatarUrl: string | null } | undefined;
+      if (user) {
+        userInfoMap.set(m.userId, { username: user.username, avatarUrl: user.avatarUrl ?? null });
+      }
+    }
+
+    const balances = memberIds.map((userId) => ({
+      userId,
+      username: userInfoMap.get(userId)?.username ?? 'Inconnu',
+      avatarUrl: userInfoMap.get(userId)?.avatarUrl ?? null,
+      net: nets.get(userId) ?? 0,
+    }));
+
+    // Passe 2 : simplification des dettes (algo glouton)
+    const creditors = balances
+      .filter((b) => b.net > 0)
+      .map((b) => ({ ...b }))
+      .sort((a, b) => b.net - a.net);
+
+    const debtors = balances
+      .filter((b) => b.net < 0)
+      .map((b) => ({ ...b }))
+      .sort((a, b) => a.net - b.net);
+
+    const debts: Array<{
+      fromUserId: string;
+      fromUsername: string;
+      toUserId: string;
+      toUsername: string;
+      amount: number;
+    }> = [];
+
+    let ci = 0;
+    let di = 0;
+
+    while (ci < creditors.length && di < debtors.length) {
+      const creditor = creditors[ci]!;
+      const debtor = debtors[di]!;
+
+      const amount = Math.min(creditor.net, -debtor.net);
+
+      debts.push({
+        fromUserId: debtor.userId,
+        fromUsername: debtor.username,
+        toUserId: creditor.userId,
+        toUsername: creditor.username,
+        amount,
+      });
+
+      creditor.net -= amount;
+      debtor.net += amount;
+
+      if (creditor.net === 0) ci++;
+      if (debtor.net === 0) di++;
+    }
+
+    res.status(200).json({ balances, debts });
+  } catch (error) {
+    next(error);
+  }
+};

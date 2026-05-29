@@ -24,7 +24,8 @@ import {
   transferAdmin } from '../controllers/colocationController';
 import { 
   createExpense, 
-  getExpenses 
+  getExpenses,
+  getBalances
 } from '../controllers/expenseController';
 
 
@@ -785,6 +786,79 @@ router.get(
   checkIdParam,
   requireColocationMember,
   getExpenses
+);
+
+/**
+ * @swagger
+ * /api/colocations/{id}/balances:
+ *   get:
+ *     summary: Voir les soldes et dettes simplifiées de la colocation (US-21)
+ *     tags: [Expenses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID de la colocation
+ *     responses:
+ *       200:
+ *         description: Soldes nets par membre et liste des dettes simplifiées
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 balances:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       userId:
+ *                         type: string
+ *                         format: uuid
+ *                       username:
+ *                         type: string
+ *                       avatarUrl:
+ *                         type: string
+ *                         nullable: true
+ *                       net:
+ *                         type: integer
+ *                         description: "Solde en centimes. Positif = on lui doit. Négatif = il doit."
+ *                 debts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       fromUserId:
+ *                         type: string
+ *                         format: uuid
+ *                       fromUsername:
+ *                         type: string
+ *                       toUserId:
+ *                         type: string
+ *                         format: uuid
+ *                       toUsername:
+ *                         type: string
+ *                       amount:
+ *                         type: integer
+ *                         description: Montant de la dette en centimes
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Non membre de la colocation
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get(
+  '/:id/balances',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  getBalances
 );
 
 /**
