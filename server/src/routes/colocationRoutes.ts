@@ -8,7 +8,8 @@ import {
   getColocationMembers,
   updateColocationInfo,
   regenerateInviteCode,
-  removeMember
+  removeMember,
+  leaveColocation,
 } from '../controllers/colocationController';
 import { checkIdParam } from '../middlewares/checkIdParam';
 import { requireColocationMember } from '../middlewares/requireColocationMember';
@@ -935,6 +936,12 @@ router.delete(
   removeMember
 );
 
-
+router.delete(
+  '/:id/members/me',
+  authenticateToken,
+  checkIdParam,
+  requireColocationMember,
+  leaveColocation
+);
 
 export default router;

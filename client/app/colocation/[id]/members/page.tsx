@@ -25,8 +25,6 @@ interface Member {
   joinedAt: string;
 }
 
-/** Décode le payload JWT pour récupérer l'id de l'utilisateur connecté.
- *  Le payload JWT n'est pas chiffré, juste signé — lecture côté client safe. */
 function getUserIdFromToken(token: string): string | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
@@ -57,6 +55,10 @@ export default function MembersPage({
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // US-10 — Quitter la colocation
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -80,7 +82,6 @@ export default function MembersPage({
         const meData = await meRes.json();
         setMyRole(meData.role ?? '');
         setInviteCode(meData.colocation?.inviteCode ?? null);
-        // getColocationMembers retourne un tableau direct
         const data: Member[] = await membersRes.json();
         setMembers(data);
       })
@@ -105,13 +106,34 @@ export default function MembersPage({
         setRemoveError(data.message || 'Erreur lors du retrait.');
         return;
       }
-      // Mise à jour optimiste : retire le membre sans rechargement complet
       setMembers((prev) => prev.filter((m) => m.userId !== pendingRemove.userId));
       setPendingRemove(null);
     } catch {
       setRemoveError('Impossible de joindre le serveur.');
     } finally {
       setRemoving(false);
+    }
+  };
+
+  const handleLeave = async () => {
+    if (!accessToken) return;
+    setLeaving(true);
+    setLeaveError(null);
+    try {
+      const res = await apiFetch(`/api/colocations/${id}/members/me`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.status === 204) {
+        router.push('/colocation');
+      } else {
+        const data = await res.json();
+        setLeaveError(data.message || 'Une erreur est survenue.');
+      }
+    } catch {
+      setLeaveError('Impossible de contacter le serveur.');
+    } finally {
+      setLeaving(false);
     }
   };
 
@@ -209,7 +231,6 @@ export default function MembersPage({
                   animationDelay: `${i * 0.08}s`,
                 }}
               >
-                {/* Avatar — identique à l'original */}
                 <div
                   style={{
                     width: 48,
@@ -237,7 +258,6 @@ export default function MembersPage({
                   )}
                 </div>
 
-                {/* Infos — identique à l'original */}
                 <div style={{ flex: 1 }}>
                   <div style={{ color: '#fff', fontWeight: 600, fontSize: '1rem' }}>
                     {member.username}
@@ -252,7 +272,6 @@ export default function MembersPage({
                   </div>
                 </div>
 
-                {/* Badge admin — identique à l'original */}
                 {member.role === 'admin' && (
                   <span
                     style={{
@@ -270,7 +289,6 @@ export default function MembersPage({
                   </span>
                 )}
 
-                {/* Bouton Retirer — visible uniquement pour l'admin, pas sur sa propre carte */}
                 {myRole === 'admin' && member.userId !== myUserId && (
                   <button
                     onClick={() => {
@@ -297,7 +315,28 @@ export default function MembersPage({
           </div>
         )}
 
-        {/* AlertDialog confirmation retrait */}
+        {/* Bouton quitter la colocation */}
+        {!loading && !error && (
+          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+            <button
+              onClick={() => setShowLeaveModal(true)}
+              style={{
+                background: 'rgba(220,50,50,0.15)',
+                border: '1px solid rgba(220,50,50,0.4)',
+                color: '#ff8080',
+                borderRadius: '12px',
+                padding: '0.6rem 1.5rem',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontFamily: 'DM Sans, sans-serif',
+              }}
+            >
+              Quitter la colocation
+            </button>
+          </div>
+        )}
+
+        {/* AlertDialog confirmation retrait membre */}
         <AlertDialog
           open={!!pendingRemove}
           onOpenChange={(open) => { if (!open) setPendingRemove(null); }}
@@ -320,6 +359,63 @@ export default function MembersPage({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Modale quitter la colocation */}
+        {showLeaveModal && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 50, padding: '1rem',
+          }}>
+            <div style={{
+              background: '#2a4419', borderRadius: '16px', padding: '1.5rem',
+              width: '100%', maxWidth: '360px', border: '1px solid rgba(255,255,255,0.1)',
+            }}>
+              <h2 style={{ color: '#ff8080', marginBottom: '0.5rem', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.5rem' }}>
+                Quitter la colocation
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                Es-tu sûr(e) de vouloir quitter cette colocation ? Cette action est irréversible.
+                {myRole === 'admin' && members.length > 1 && (
+                  <span style={{ display: 'block', marginTop: '0.5rem', color: '#ffb347' }}>
+                    ⚠️ Tu es admin. Transfère d'abord le rôle admin à un autre membre.
+                  </span>
+                )}
+              </p>
+              {leaveError && (
+                <p style={{ color: '#ff8080', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+                  {leaveError}
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  onClick={() => { setShowLeaveModal(false); setLeaveError(null); }}
+                  style={{
+                    flex: 1, background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: '#fff', borderRadius: '8px', padding: '0.5rem',
+                    cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleLeave}
+                  disabled={leaving}
+                  style={{
+                    flex: 1, background: '#c0392b', border: 'none',
+                    color: '#fff', borderRadius: '8px', padding: '0.5rem',
+                    cursor: leaving ? 'not-allowed' : 'pointer',
+                    opacity: leaving ? 0.6 : 1,
+                    fontFamily: 'DM Sans, sans-serif', fontWeight: 600,
+                  }}
+                >
+                  {leaving ? 'En cours...' : 'Confirmer'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
