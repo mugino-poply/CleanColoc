@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiFetch } from '@/lib/api';
@@ -68,9 +68,36 @@ export default function ExpensesPage({ params }: { params: Promise<{ id: string 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
+  // US-22 — filtres client-side
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
   const myUserId = accessToken
     ? (() => { try { return JSON.parse(atob(accessToken.split('.')[1]!)).id as string; } catch { return null; } })()
     : null;
+
+  // Rôle de l'utilisateur courant dans la colocation
+  const myRole = members.find((m) => m.userId === myUserId)?.role ?? null;
+
+  // Catégories disponibles (déduplication)
+  const availableCategories = useMemo(() => {
+    const set = new Set(expenses.map((e) => e.category));
+    return Array.from(set).sort();
+  }, [expenses]);
+
+  // Dépenses filtrées (client-side)
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((e) => {
+      if (filterFrom && e.date < filterFrom) return false;
+      if (filterTo && e.date > filterTo) return false;
+      if (filterCategory && e.category !== filterCategory) return false;
+      return true;
+    });
+  }, [expenses, filterFrom, filterTo, filterCategory]);
+
+  const filteredTotal = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const hasActiveFilters = filterFrom !== '' || filterTo !== '' || filterCategory !== '';
 
   const fetchAll = () => {
     if (!accessToken) return;
@@ -126,7 +153,19 @@ export default function ExpensesPage({ params }: { params: Promise<{ id: string 
     fetchAll();
   };
 
+  // US-23 — appelé par ExpenseDetailModal après update ou delete
+  const handleExpenseSaved = () => {
+    setSelectedExpense(null);
+    fetchAll();
+  };
+
   const allBalanced = balances.length === 0 || balances.every(b => b.net === 0);
+
+  const resetFilters = () => {
+    setFilterFrom('');
+    setFilterTo('');
+    setFilterCategory('');
+  };
 
   return (
     <main style={{
@@ -280,24 +319,149 @@ export default function ExpensesPage({ params }: { params: Promise<{ id: string 
 
             {/* Liste des dépenses */}
             <section>
-              <h2 style={{
-                fontFamily: 'Bebas Neue, sans-serif',
-                fontSize: '1.6rem',
-                color: '#fff',
-                letterSpacing: '0.05em',
-                marginBottom: '1rem',
-              }}>
-                Toutes les dépenses
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <h2 style={{
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  fontSize: '1.6rem',
+                  color: '#fff',
+                  letterSpacing: '0.05em',
+                  margin: 0,
+                }}>
+                  Toutes les dépenses
+                </h2>
+                {hasActiveFilters && (
+                  <span style={{
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    fontSize: '1.1rem',
+                    color: '#ef9f27',
+                    letterSpacing: '0.04em',
+                  }}>
+                    Total : {fmt(filteredTotal)}
+                  </span>
+                )}
+              </div>
 
-              {expenses.length === 0 ? (
+              {/* US-22 — Barre de filtres */}
+              {expenses.length > 0 && (
+                <div style={{
+                  background: 'rgba(255,255,255,0.07)',
+                  borderRadius: 16,
+                  padding: '1rem 1.25rem',
+                  marginBottom: '1.25rem',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                  alignItems: 'flex-end',
+                }}>
+                  {/* Du */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Du
+                    </label>
+                    <input
+                      type="date"
+                      value={filterFrom}
+                      onChange={e => setFilterFrom(e.target.value)}
+                      style={{
+                        background: 'rgba(255,255,255,0.12)',
+                        border: 'none',
+                        borderRadius: 12,
+                        padding: '0.45rem 0.75rem',
+                        color: '#fff',
+                        fontSize: '0.85rem',
+                        fontFamily: 'DM Sans, sans-serif',
+                        colorScheme: 'dark',
+                      }}
+                    />
+                  </div>
+
+                  {/* Au */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Au
+                    </label>
+                    <input
+                      type="date"
+                      value={filterTo}
+                      onChange={e => setFilterTo(e.target.value)}
+                      style={{
+                        background: 'rgba(255,255,255,0.12)',
+                        border: 'none',
+                        borderRadius: 12,
+                        padding: '0.45rem 0.75rem',
+                        color: '#fff',
+                        fontSize: '0.85rem',
+                        fontFamily: 'DM Sans, sans-serif',
+                        colorScheme: 'dark',
+                      }}
+                    />
+                  </div>
+
+                  {/* Catégorie */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Catégorie
+                    </label>
+                    <select
+                      value={filterCategory}
+                      onChange={e => setFilterCategory(e.target.value)}
+                      style={{
+                        background: 'rgba(255,255,255,0.12)',
+                        border: 'none',
+                        borderRadius: 12,
+                        padding: '0.45rem 0.75rem',
+                        color: filterCategory ? '#fff' : 'rgba(255,255,255,0.45)',
+                        fontSize: '0.85rem',
+                        fontFamily: 'DM Sans, sans-serif',
+                        cursor: 'pointer',
+                        minWidth: 120,
+                      }}
+                    >
+                      <option value="" style={{ background: '#3d6124' }}>Toutes</option>
+                      {availableCategories.map(cat => (
+                        <option key={cat} value={cat} style={{ background: '#3d6124' }}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Reset */}
+                  {hasActiveFilters && (
+                    <button
+                      onClick={resetFilters}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        color: 'rgba(255,255,255,0.6)',
+                        borderRadius: 999,
+                        padding: '0.45rem 1rem',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        fontFamily: 'DM Sans, sans-serif',
+                        marginTop: 'auto',
+                      }}
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {filteredExpenses.length === 0 ? (
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', marginTop: '2rem' }}>
-                  <p style={{ fontSize: '1.1rem' }}>Aucune dépense pour le moment.</p>
-                  <p style={{ fontSize: '0.9rem' }}>Ajoutez la première !</p>
+                  {hasActiveFilters ? (
+                    <p style={{ fontSize: '1rem' }}>Aucune dépense ne correspond aux filtres.</p>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: '1.1rem' }}>Aucune dépense pour le moment.</p>
+                      <p style={{ fontSize: '0.9rem' }}>Ajoutez la première !</p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {expenses.map((expense, i) => (
+                  {filteredExpenses.map((expense, i) => (
                     <div
                       key={expense.id}
                       onClick={() => setSelectedExpense(expense)}
@@ -376,7 +540,12 @@ export default function ExpensesPage({ params }: { params: Promise<{ id: string 
         <ExpenseDetailModal
           expense={selectedExpense}
           myUserId={myUserId}
+          myRole={myRole}
+          availableCategories={availableCategories}
+          members={members}
+          accessToken={accessToken}
           onClose={() => setSelectedExpense(null)}
+          onSaved={handleExpenseSaved}
         />
       )}
 
