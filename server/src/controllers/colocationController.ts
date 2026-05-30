@@ -390,6 +390,61 @@ export const regenerateInviteCode = async (
     next(error);
   }
 };
+export const leaveColocation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const t = await sequelize.transaction();
+  try {
+    const colocationId = req.params.id as string;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      await t.rollback();
+      res.status(401).json({ message: 'Non authentifié.' });
+      return;
+    }
+
+    const membership = await Membership.findOne({
+      where: { userId, colocationId },
+      transaction: t,
+    });
+
+    if (!membership) {
+      await t.rollback();
+      res.status(404).json({ message: "Vous n'êtes pas membre de cette colocation." });
+      return;
+    }
+
+    const allMembers = await Membership.findAll({
+      where: { colocationId },
+      transaction: t,
+    });
+
+    // Si admin et d'autres membres restent → erreur
+    if (membership.role === 'admin' && allMembers.length > 1) {
+      await t.rollback();
+      res.status(400).json({ message: "Transférez l'admin avant de quitter." });
+      return;
+    }
+
+    // Si dernier membre → supprimer la colocation
+    if (allMembers.length === 1) {
+      const colocation = await Colocation.findByPk(colocationId, { transaction: t });
+      await membership.destroy({ transaction: t });
+      await colocation?.destroy({ transaction: t });
+    } else {
+      await membership.destroy({ transaction: t });
+    }
+
+    await t.commit();
+    res.status(204).send();
+  } catch (error) {
+    await t.rollback();
+    next(error);
+  }
+};
 
 export const removeMember = async (
   req: Request,
