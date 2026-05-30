@@ -145,4 +145,5 @@ cleancoloc/
 
 - Chaque push déclenche l'exécution des **tests Jest** via `ci.yml`
 - Chaque push sur `main` déclenche le **déploiement automatique** du frontend via `cd-frontend.yml`
+- Chaque push sur `main` déclenche le **déploiement automatique** du backend via `cd-backend.yml`
 - Les secrets sensibles (IP VPS, clé SSH, credentials DB) sont dans les **GitHub Secrets**
