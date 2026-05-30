@@ -62,6 +62,7 @@ const startServer = async () => {
     const port = parseInt(process.env['PORT'] ?? '3001', 10);
     app.listen(port, () => {
         console.log(`Serveur lancé sur http://localhost:${port}`);
+        console.log("Gaspard et Hypolite a votre service !!")
         startScheduler();
     });
 };
