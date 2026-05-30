@@ -758,7 +758,7 @@ router.post(
  * @swagger
  * /api/colocations/{id}/expenses:
  *   get:
- *     summary: Lister les dépenses d'une colocation
+ *     summary: Lister les dépenses d'une colocation, avec filtres (US-22)
  *     tags: [Expenses]
  *     security:
  *       - bearerAuth: []
@@ -770,9 +770,31 @@ router.post(
  *           type: string
  *           format: uuid
  *         description: ID de la colocation
+ *       - in: query
+ *         name: from
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "Date de début de période (YYYY-MM-DD, incluse)"
+ *       - in: query
+ *         name: to
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "Date de fin de période (YYYY-MM-DD, incluse)"
+ *       - in: query
+ *         name: category
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: "Filtre exact sur la catégorie (ex: courses)"
  *     responses:
  *       200:
- *         description: Liste des dépenses avec leurs parts
+ *         description: Liste des dépenses filtrées avec leurs parts
+ *       400:
+ *         description: Format de date invalide
  *       401:
  *         description: Non authentifié
  *       403:
