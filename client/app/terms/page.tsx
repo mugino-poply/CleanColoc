@@ -136,9 +136,6 @@ export default function TermsPage() {
             </svg>
             CLEAN&apos; COLOC
           </Link>
-          <div>
-            <Link href="/register" className="btn-outline btn-sm">S&apos;inscrire</Link>
-          </div>
         </nav>
 
         <main className="terms-center">
