@@ -19,7 +19,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/CleanColoc
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             cd client
             npm install
             NEXT_PUBLIC_API_URL=https://cleancoloc.ddns.net npm run build
